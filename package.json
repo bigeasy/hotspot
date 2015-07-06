@@ -1,0 +1,32 @@
+{
+    "name":             "hotspot",
+    "version":          "9.9.9",
+    "author":           "Alan Gutierrez <alan@prettyrobots.com>",
+    "description":      "An asynchronous control-flow library that courts the V8 JIT complier.",
+    "keywords":
+    [
+                        "http", "https", "rest", "json", "curl"
+    ],
+    "contributors":     [],
+    "homepage":         "https://github.com/bigeasy/hotspot",
+    "bugs":             "https://github.com/bigeasy/hotspot/issues",
+    "main":             "hotspot",
+    "license":          "MIT",
+    "repository":
+    {
+                        "type": "git",
+                        "url": "http://github.com/bigeasy/hotspot.git"
+    },
+    "dependencies":
+    {
+    },
+    "devDependencies":
+    {
+                        "cadence":              "0.0.56",
+                        "proof":                "0.0.52"
+    },
+    "scripts":
+    {
+                        "test": "proof platform win32 && proof test */*/*.t.js || t/test"
+    }
+}
