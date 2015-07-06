@@ -1,6 +1,6 @@
 {
     "name":             "hotspot",
-    "version":          "9.9.9",
+    "version":          "0.0.0",
     "author":           "Alan Gutierrez <alan@prettyrobots.com>",
     "description":      "An asynchronous control-flow library that courts the V8 JIT complier.",
     "keywords":
