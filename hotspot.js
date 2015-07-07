@@ -6,23 +6,30 @@
 } (function () {
     var stack = [], push = [].push, token = {}
 
-    function Cadence (cadence, steps, done) {
+    function Cadence (cadence, steps, callback) {
         this.finalizers = cadence.finalizers
         this.self = cadence.self
         this.steps = steps
-        this.done = done
-        this.loop = false
+        this.callback = callback
+    }
+
+    Cadence.prototype.done = function (vargs) {
+        if (this.finalizers.length == 0) {
+            this.callback.apply(null, vargs)
+        } else {
+            finalize(cadence, [], callback, vargs)
+        }
     }
 
     function Step (cadence, index, vargs) {
         this.cadence = cadence
-        this.results = []
-        this.errors = []
-        this.called = 0
         this.index = index
+        this.vargs = vargs
+        this.results = new Array
+        this.errors = new Array
+        this.called = 0
         this.sync = true
         this.next = null
-        this.vargs = vargs
     }
 
     Step.prototype.callback = function (result, vargs) {
@@ -43,7 +50,7 @@
 
     Step.prototype.createCallback = function () {
         var self = this
-        var result = { vargs: [], starter: null }
+        var result = { vargs: [] }
 
         self.results.push(result)
         self.sync = false
@@ -52,7 +59,7 @@
 
         function callback () {
             var I = arguments.length
-            var vargs = new Array(I)
+            var vargs = new Array
             for (var i = 0; i < I; i++) {
                 vargs[i] = arguments[i]
             }
@@ -77,7 +84,7 @@
 
         function starter () {
             var I = arguments.length
-            var vargs = new Array(I)
+            var vargs = []
             for (var i = 0; i < I; i++) {
                 vargs[i] = arguments[i]
             }
@@ -86,17 +93,7 @@
     }
 
     function async () {
-        var step = stack[stack.length - 1]
-        var I = arguments.length
-        if (I) {
-            var vargs = new Array(I)
-            for (var i = 0; i < I; i++) {
-                vargs[i] = arguments[i]
-            }
-            return step.createCadence(vargs)
-        } else {
-            return step.createCallback()
-        }
+        return stack[stack.length - 1].createCallback()
     }
 
     async.__defineGetter__('self', function () {
@@ -122,7 +119,7 @@
                 step.catcher,
                 function () {
                     var I = arguments.length
-                    var vargs = new Array(I)
+                    var vargs = []
                     for (var i = 0; i < I; i++) {
                         vargs[i] = arguments[i]
                     }
@@ -265,21 +262,9 @@
     }
 
     function execute (self, steps, vargs) {
-        var callback = vargs.pop()
-
-        var cadence = new Cadence({ finalizers: [], self: self }, steps, done)
-
+        var cadence = new Cadence({ finalizers: [], self: self }, steps, vargs.pop())
         var step = new Step(cadence, -1, vargs)
-
         invoke(step)
-
-        function done (vargs) {
-            if (cadence.finalizers.length == 0) {
-                callback.apply(null, vargs)
-            } else {
-                finalize(cadence, [], callback, vargs)
-            }
-        }
     }
 
     function hotspot () {
