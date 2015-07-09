@@ -258,9 +258,8 @@
             f = function () {
                 var I = arguments.length
                 var vargs = []
-                vargs[0] = async
                 for (var i = 0; i < I; i++) {
-                    vargs[i + 1] = arguments[i]
+                    vargs[i] = arguments[i]
                 }
                 execute(this, steps, vargs)
             }
@@ -269,9 +268,8 @@
             f = function (one) {
                 var I = arguments.length
                 var vargs = []
-                vargs[0] = async
                 for (var i = 0; i < I; i++) {
-                    vargs[i + 1] = arguments[i]
+                    vargs[i] = arguments[i]
                 }
                 execute(this, steps, vargs)
             }
@@ -280,9 +278,8 @@
             f = function (one, two) {
                 var I = arguments.length
                 var vargs = []
-                vargs[0] = async
                 for (var i = 0; i < I; i++) {
-                    vargs[i + 1] = arguments[i]
+                    vargs[i] = arguments[i]
                 }
                 execute(this, steps, vargs)
             }
@@ -291,9 +288,8 @@
             f = function (one, two, three) {
                 var I = arguments.length
                 var vargs = []
-                vargs[0] = async
                 for (var i = 0; i < I; i++) {
-                    vargs[i + 1] = arguments[i]
+                    vargs[i] = arguments[i]
                 }
                 execute(this, steps, vargs)
             }
@@ -302,9 +298,8 @@
             f = function (one, two, three, four) {
                 var I = arguments.length
                 var vargs = []
-                vargs[0] = async
                 for (var i = 0; i < I; i++) {
-                    vargs[i + 1] = arguments[i]
+                    vargs[i] = arguments[i]
                 }
                 execute(this, steps, vargs)
             }
@@ -319,9 +314,8 @@
                 return function (' + args.join(',') + ') {                      \n\
                     var I = arguments.length                                    \n\
                     var vargs = []                                              \n\
-                    vargs[0] = async                                            \n\
                     for (var i = 0; i < I; i++) {                               \n\
-                        vargs[i + 1] = arguments[i]                             \n\
+                        vargs[i] = arguments[i]                                 \n\
                     }                                                           \n\
                     execute(this, steps, vargs)                                 \n\
                 }                                                               \n\
