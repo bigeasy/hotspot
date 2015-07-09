@@ -67,38 +67,9 @@
         }
     }
 
-    Step.prototype.createCadence = function (vargs) {
-        var self = this
-
-        var callback = this.createCallback()
-
-        var result = this.results[this.results.length - 1]
-
-        var cadence = new Cadence(self.cadence, vargs, function (vargs) {
-            callback.apply(null, vargs)
-        })
-
-        var step = new Step(cadence, -1, [])
-
-        return result.starter = starter
-
-        function starter () {
-            var I = arguments.length
-            var vargs = []
-            for (var i = 0; i < I; i++) {
-                vargs[i] = arguments[i]
-            }
-            return self.starter(step, result, vargs)
-        }
-    }
-
     function async () {
         return stack[stack.length - 1].createCallback()
     }
-
-    async.__defineGetter__('self', function () {
-        return stack[stack.length - 1].cadence.self
-    })
 
     function call (fn, self, vargs) {
         try {
