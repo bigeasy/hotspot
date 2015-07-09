@@ -17,7 +17,7 @@
         if (this.finalizers.length == 0) {
             this.callback.apply(null, vargs)
         } else {
-            finalize(cadence, [], callback, vargs)
+            finalize(this, [], this.callback, vargs)
         }
     }
 
@@ -94,8 +94,11 @@
                     for (var i = 0; i < I; i++) {
                         vargs[i] = arguments[i]
                     }
-                    if (vargs[0] !== error) {
-                        step.vargs = vargs
+                    // kind of loosey-goosey, this test to see if the user
+                    // specified arguments or not, what if the dear user wants
+                    // to return the error as the first non-error result?
+                    if (vargs[1] !== error) {
+                        step.vargs = vargs.slice(1)
                         step.results.length = 0
                     }
                 }
@@ -202,7 +205,7 @@
                     result.starter(token)
                 }
             }
-            step.vargs = [].concat(ret[0] === void(0) ? vargs : ret[0])
+            step.vargs = [].concat(ret[0] === void(0) ? vargs.slice(1) : ret[0])
         }
 
         if (step.sync) {

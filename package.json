@@ -23,7 +23,8 @@
     "devDependencies":
     {
                         "cadence":              "0.0.56",
-                        "proof":                "0.0.52"
+                        "proof":                "0.0.52",
+                        "abend":                "0.0.0"
     },
     "scripts":
     {
