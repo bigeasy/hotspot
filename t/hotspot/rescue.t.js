@@ -1,4 +1,4 @@
-require('proof')(5, prove)
+require('proof')(7, prove)
 
 function prove (assert) {
     var hotspot = require('../..')
@@ -32,4 +32,18 @@ function prove (assert) {
     }, function (async, error) {
         assert(error.message, 'given', 'catch given')
     }])(abend)
+
+    hotspot([function (async) {
+        async()(new Error('catch'))
+    }, /^catch$/, function (async, error) {
+        assert(error.message, 'catch', 'catch specified')
+    }])(abend)
+
+    hotspot([function (async) {
+        async()(new Error('uncaught'))
+    }, /^catch$/, function (async, error) {
+        throw new Error
+    }])(function (error) {
+        assert(error.message, 'uncaught', 'do not catch unspecified')
+    })
 }

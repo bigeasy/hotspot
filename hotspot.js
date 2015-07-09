@@ -171,9 +171,9 @@
                 fn = fn[0]
             } else if (fn.length === 3) {
                 var filter = fn
-                step.catcher = function (error) {
+                step.catcher = function (async, error) {
                     if (filter[1].test(error.code || error.message)) {
-                        return filter[2](error)
+                        return filter[2](async, error)
                     } else {
                         throw error
                     }
