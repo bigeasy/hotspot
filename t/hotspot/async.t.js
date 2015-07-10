@@ -3,7 +3,6 @@ require('proof')(1, prove)
 function prove (assert) {
     var hotspot = require('../..')
     var abend = require('abend')
-
     hotspot(function (async) {
         var callback = async()
         async()(null, 3)

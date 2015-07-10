@@ -67,8 +67,16 @@
         }
     }
 
-    function async () {
+    function async (loop) {
         return stack[stack.length - 1].createCallback()
+    }
+
+    async.repeat = function () {
+        return { token: token, repeat: true }
+    }
+
+    async.done = function () {
+        return { token: token, repeat: false }
     }
 
     function call (fn, self, vargs) {
@@ -132,12 +140,8 @@
 
         if (step.results.length == 0) {
             vargs = step.vargs
-            if (vargs[0] && vargs[0].invoke === token) {
-                var label = vargs.shift()
-                cadence = step.cadence = label.cadence
-                cadence.loop = label.loop
-                step.index = label.index - 1
-                steps = cadence.steps
+            if (vargs[0] && vargs[0].token === token) {
+                step.index = vargs.shift().repeat ? -1 : cadence.steps.length - 1
             }
         } else {
             vargs = []
@@ -152,12 +156,8 @@
         step = new Step(step.cadence, step.index + 1, vargs)
 
         if (step.index == steps.length) {
-            if (cadence.loop) {
-                step.index = 0
-            } else {
-                cadence.done(vargs.length === 0 ? [] : [ null ].concat(vargs))
-                return null
-            }
+            cadence.done(vargs.length === 0 ? [] : [ null ].concat(vargs))
+            return null
         }
 
         var fn = steps[step.index]
@@ -199,12 +199,6 @@
             step.vargs = vargs
             step.sync = true
         } else {
-            for (var i = 0, I = step.results.length; i < I; i++) {
-                var result = step.results[i]
-                if (result.starter) {
-                    result.starter(token)
-                }
-            }
             step.vargs = [].concat(ret[0] === void(0) ? vargs.slice(1) : ret[0])
         }
 
