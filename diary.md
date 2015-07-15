@@ -41,3 +41,15 @@ same for objects and functions.
 Also, `async.repeat()` and `async.done()` are not going to be the hottest spots
 in Hotspot. Preserving the `async()` syntax from Cadence would take precedence
 when the gains are almost immeasurable.
+
+## Single Cadence
+
+There is a bunch of stuff that I know so well I don't need to write it down to
+work it out, this is one of them. The purpose of Hotspot is to make cadences
+that will compile. Sub-cadences defined using `async` in Cadence are going to
+anonymous functions that are only going to be run once, so they will never be
+be compiled. Hotspot will not have sub-cadences. The cadence will be specified
+at the top level.
+
+Because there in only one Cadence, it can be processed for finalizers when it is
+defined.
