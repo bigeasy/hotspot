@@ -57,7 +57,7 @@
 
         return callback
 
-        function callback () {
+        function callback () { // benchmark using bind(this).
             var I = arguments.length
             var vargs = new Array
             for (var i = 0; i < I; i++) {
