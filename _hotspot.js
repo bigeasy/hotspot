@@ -123,91 +123,87 @@
     }
 
     function invoke (step) {
-        while (step = _invoke(step)) { }
-    }
+        for (;;) {
+            var vargs, cadence = step.cadence, steps = cadence.steps
 
-    function _invoke (step) {
-        var vargs, cadence = step.cadence, steps = cadence.steps
-
-        if (step.errors.length) {
-            if (step.catcher) {
-                rescue(step)
-            } else {
-                cadence.done([ step.errors[0] ])
-            }
-            return null
-        }
-
-        if (step.results.length == 0) {
-            vargs = step.vargs
-            if (vargs[0] && vargs[0].token === token) {
-                step.index = vargs.shift().repeat ? -1 : cadence.steps.length - 1
-            }
-        } else {
-            vargs = []
-            for (var i = 0, I = step.results.length; i < I; i++) {
-                var vargs_ = step.results[i].vargs
-                for (var j = 0, J = vargs_.length; j < J; j++) {
-                    vargs.push(vargs_[j])
+            if (step.errors.length) {
+                if (step.catcher) {
+                    rescue(step)
+                } else {
+                    cadence.done([ step.errors[0] ])
                 }
+                break
             }
-        }
 
-        step = new Step(step.cadence, step.index + 1, vargs)
-
-        if (step.index == steps.length) {
-            cadence.done(vargs.length === 0 ? [] : [ null ].concat(vargs))
-            return null
-        }
-
-        var fn = steps[step.index]
-
-        if (Array.isArray(fn)) {
-            if (fn.length === 1) {
-                cadence.finalizers.push({ steps: fn, vargs: vargs })
-                return step
-            } else if (fn.length === 2) {
-                step.catcher = fn[1]
-                fn = fn[0]
-            } else if (fn.length === 3) {
-                var filter = fn
-                step.catcher = function (async, error) {
-                    if (filter[1].test(error.code || error.message)) {
-                        return filter[2](async, error)
-                    } else {
-                        throw error
+            if (step.results.length == 0) {
+                vargs = step.vargs
+                if (vargs[0] && vargs[0].token === token) {
+                    step.index = vargs.shift().repeat ? -1 : cadence.steps.length - 1
+                }
+            } else {
+                vargs = []
+                for (var i = 0, I = step.results.length; i < I; i++) {
+                    var vargs_ = step.results[i].vargs
+                    for (var j = 0, J = vargs_.length; j < J; j++) {
+                        vargs.push(vargs_[j])
                     }
                 }
-                fn = fn[0]
+            }
+
+            step = new Step(step.cadence, step.index + 1, vargs)
+
+            if (step.index == steps.length) {
+                cadence.done(vargs.length === 0 ? [] : [ null ].concat(vargs))
+                break
+            }
+
+            var fn = steps[step.index]
+
+            if (Array.isArray(fn)) {
+                if (fn.length === 1) {
+                    cadence.finalizers.push({ steps: fn, vargs: vargs })
+                    continue
+                } else if (fn.length === 2) {
+                    step.catcher = fn[1]
+                    fn = fn[0]
+                } else if (fn.length === 3) {
+                    var filter = fn
+                    step.catcher = function (async, error) {
+                        if (filter[1].test(error.code || error.message)) {
+                            return filter[2](async, error)
+                        } else {
+                            throw error
+                        }
+                    }
+                    fn = fn[0]
+                } else {
+                    step.vargs = [ step.vargs ]
+                    continue
+                }
+            }
+
+            vargs.unshift(async)
+
+            stack.push(step)
+
+            var ret = call(fn, cadence.self, vargs)
+                   // ^^^^
+
+            stack.pop()
+
+            if (ret.length === 2) {
+                step.errors.push(ret[1])
+                step.vargs = vargs
+                step.sync = true
             } else {
-                step.vargs = [ step.vargs ]
-                return step
+                step.vargs = [].concat(ret[0] === void(0) ? vargs.slice(1) : ret[0])
+            }
+
+            if (!step.sync) {
+                step.next = step
+                break
             }
         }
-
-        vargs.unshift(async)
-
-        stack.push(step)
-
-        var ret = call(fn, cadence.self, vargs)
-               // ^^^^
-
-        stack.pop()
-
-        if (ret.length === 2) {
-            step.errors.push(ret[1])
-            step.vargs = vargs
-            step.sync = true
-        } else {
-            step.vargs = [].concat(ret[0] === void(0) ? vargs.slice(1) : ret[0])
-        }
-
-        if (step.sync) {
-            return step
-        }
-
-        step.next = step
-        return null
     }
 
     function finalize (cadence, errors, callback, vargs) {
@@ -329,68 +325,48 @@
 /*
 
  % node --version
-v0.10.40
- % node benchmark/incremental/call.js
- hotspot call 0 x 698,553 ops/sec ±0.74% (97 runs sampled)
-_hotspot call 0 x 694,490 ops/sec ±0.45% (100 runs sampled)
- hotspot call 1 x 704,919 ops/sec ±0.57% (98 runs sampled)
-_hotspot call 1 x 700,274 ops/sec ±0.37% (102 runs sampled)
- hotspot call 2 x 705,951 ops/sec ±0.37% (97 runs sampled)
-_hotspot call 2 x 702,175 ops/sec ±0.31% (103 runs sampled)
- hotspot call 3 x 702,084 ops/sec ±0.34% (103 runs sampled)
-_hotspot call 3 x 704,156 ops/sec ±0.44% (95 runs sampled)
-Fastest is  hotspot call 2,_hotspot call 3
- % node benchmark/incremental/loop.js
- hotspot loop 1 x 255,703 ops/sec ±0.32% (95 runs sampled)
-_hotspot loop 1 x 250,149 ops/sec ±0.35% (102 runs sampled)
- hotspot loop 2 x 255,625 ops/sec ±0.54% (99 runs sampled)
-_hotspot loop 2 x 251,315 ops/sec ±0.20% (103 runs sampled)
- hotspot loop 3 x 254,628 ops/sec ±0.39% (101 runs sampled)
-_hotspot loop 3 x 246,829 ops/sec ±0.35% (98 runs sampled)
- hotspot loop 4 x 256,170 ops/sec ±0.27% (99 runs sampled)
-_hotspot loop 4 x 246,391 ops/sec ±0.26% (101 runs sampled)
-Fastest is  hotspot loop 4, hotspot loop 1, hotspot loop 2
- % node benchmark/incremental/async.js
- hotspot async 0 x 1,177,067 ops/sec ±0.72% (99 runs sampled)
-_hotspot async 0 x 1,226,505 ops/sec ±0.25% (100 runs sampled)
- hotspot async 1 x 1,201,621 ops/sec ±0.51% (98 runs sampled)
-_hotspot async 1 x 1,224,376 ops/sec ±0.21% (102 runs sampled)
- hotspot async 2 x 1,171,864 ops/sec ±0.31% (100 runs sampled)
-_hotspot async 2 x 1,220,297 ops/sec ±0.33% (103 runs sampled)
- hotspot async 3 x 1,174,146 ops/sec ±0.38% (99 runs sampled)
-_hotspot async 3 x 1,176,936 ops/sec ±0.34% (101 runs sampled)
-Fastest is _hotspot async 0
- % node --version
 v0.12.7
  % node benchmark/incremental/call.js
- hotspot call 0 x 767,289 ops/sec ±0.49% (97 runs sampled)
-_hotspot call 0 x 840,998 ops/sec ±0.26% (96 runs sampled)
- hotspot call 1 x 835,749 ops/sec ±0.42% (103 runs sampled)
-_hotspot call 1 x 832,906 ops/sec ±0.43% (96 runs sampled)
- hotspot call 2 x 837,380 ops/sec ±0.21% (102 runs sampled)
-_hotspot call 2 x 826,099 ops/sec ±0.35% (101 runs sampled)
- hotspot call 3 x 822,571 ops/sec ±0.36% (99 runs sampled)
-_hotspot call 3 x 818,106 ops/sec ±0.29% (101 runs sampled)
-Fastest is _hotspot call 0
- % node benchmark/incremental/loop.js
- hotspot loop 1 x 229,997 ops/sec ±0.58% (100 runs sampled)
-_hotspot loop 1 x 180,585 ops/sec ±0.57% (97 runs sampled)
- hotspot loop 2 x 228,316 ops/sec ±0.59% (100 runs sampled)
-_hotspot loop 2 x 175,734 ops/sec ±0.61% (99 runs sampled)
- hotspot loop 3 x 223,545 ops/sec ±0.63% (100 runs sampled)
-_hotspot loop 3 x 180,649 ops/sec ±0.30% (102 runs sampled)
- hotspot loop 4 x 223,510 ops/sec ±0.22% (101 runs sampled)
-_hotspot loop 4 x 178,586 ops/sec ±0.36% (99 runs sampled)
-Fastest is  hotspot loop 1
+ hotspot call 0 x 903,983 ops/sec ±0.41% (103 runs sampled)
+_hotspot call 0 x 840,646 ops/sec ±0.49% (98 runs sampled)
+ hotspot call 1 x 893,468 ops/sec ±0.53% (98 runs sampled)
+_hotspot call 1 x 844,865 ops/sec ±0.32% (98 runs sampled)
+ hotspot call 2 x 895,736 ops/sec ±0.29% (102 runs sampled)
+_hotspot call 2 x 828,522 ops/sec ±0.23% (102 runs sampled)
+ hotspot call 3 x 883,757 ops/sec ±0.38% (103 runs sampled)
+_hotspot call 3 x 819,561 ops/sec ±0.39% (101 runs sampled)
+Fastest is  hotspot call 0
  % node benchmark/incremental/async.js
- hotspot async 0 x 1,010,535 ops/sec ±0.37% (98 runs sampled)
-_hotspot async 0 x 971,497 ops/sec ±0.57% (102 runs sampled)
- hotspot async 1 x 990,476 ops/sec ±0.28% (101 runs sampled)
-_hotspot async 1 x 971,696 ops/sec ±0.41% (100 runs sampled)
- hotspot async 2 x 1,005,854 ops/sec ±0.28% (100 runs sampled)
-_hotspot async 2 x 974,753 ops/sec ±0.46% (100 runs sampled)
- hotspot async 3 x 960,522 ops/sec ±0.29% (100 runs sampled)
-_hotspot async 3 x 967,539 ops/sec ±0.58% (100 runs sampled)
-Fastest is  hotspot async 0
+ hotspot async 0 x 1,134,216 ops/sec ±0.38% (97 runs sampled)
+_hotspot async 0 x 993,242 ops/sec ±0.40% (100 runs sampled)
+ hotspot async 1 x 1,092,399 ops/sec ±0.35% (99 runs sampled)
+_hotspot async 1 x 976,941 ops/sec ±0.47% (99 runs sampled)
+ hotspot async 2 x 1,142,367 ops/sec ±0.24% (101 runs sampled)
+_hotspot async 2 x 975,970 ops/sec ±0.51% (100 runs sampled)
+ hotspot async 3 x 1,122,023 ops/sec ±0.37% (101 runs sampled)
+_hotspot async 3 x 972,220 ops/sec ±0.56% (102 runs sampled)
+Fastest is  hotspot async 2
+ % node --version
+v0.10.40
+ % node benchmark/incremental/call.js
+ hotspot call 0 x 721,206 ops/sec ±1.01% (93 runs sampled)
+_hotspot call 0 x 712,664 ops/sec ±0.68% (101 runs sampled)
+ hotspot call 1 x 703,523 ops/sec ±0.45% (101 runs sampled)
+_hotspot call 1 x 708,495 ops/sec ±0.69% (93 runs sampled)
+ hotspot call 2 x 728,241 ops/sec ±0.42% (101 runs sampled)
+_hotspot call 2 x 721,323 ops/sec ±0.50% (97 runs sampled)
+ hotspot call 3 x 728,755 ops/sec ±0.16% (103 runs sampled)
+_hotspot call 3 x 720,685 ops/sec ±0.40% (97 runs sampled)
+Fastest is  hotspot call 3, hotspot call 0
+ % node benchmark/incremental/async.js
+ hotspot async 0 x 1,308,753 ops/sec ±0.46% (99 runs sampled)
+_hotspot async 0 x 1,241,593 ops/sec ±0.24% (95 runs sampled)
+ hotspot async 1 x 1,289,632 ops/sec ±0.62% (99 runs sampled)
+_hotspot async 1 x 1,248,664 ops/sec ±0.18% (102 runs sampled)
+ hotspot async 2 x 1,322,624 ops/sec ±0.36% (98 runs sampled)
+_hotspot async 2 x 1,245,365 ops/sec ±0.22% (102 runs sampled)
+ hotspot async 3 x 1,309,451 ops/sec ±0.48% (97 runs sampled)
+_hotspot async 3 x 1,237,686 ops/sec ±0.33% (102 runs sampled)
+Fastest is  hotspot async 2
 
 */

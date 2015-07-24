@@ -153,7 +153,10 @@
             step = new Step(step.cadence, step.index + 1, vargs)
 
             if (step.index == steps.length) {
-                cadence.done(vargs.length === 0 ? [] : [ null ].concat(vargs))
+                if (vargs.length !== 0) {
+                    vargs.unshift(null)
+                }
+                cadence.done(vargs)
                 break
             }
 
