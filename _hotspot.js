@@ -64,6 +64,11 @@
                 vargs[i] = arguments[i]
             }
             self.callback(result, vargs)
+
+            return
+
+            /* istanbul ignore next */
+            try {} catch (e) {}
         }
     }
 
@@ -71,13 +76,8 @@
         return stack[stack.length - 1].createCallback()
     }
 
-    async.repeat = function () {
-        return { token: token, repeat: true }
-    }
-
-    async.done = function () {
-        return { token: token, repeat: false }
-    }
+    async.continue = { token: token, repeat: true }
+    async.break = { token: token, repeat: false }
 
     function call (fn, self, vargs) {
         try {
@@ -324,32 +324,3 @@
 
     return hotspot
 })
-
-/*
-
- % node --version
-v0.12.7
- % node benchmark/incremental/async.js
- hotspot async 0 x 1,106,259 ops/sec ±0.30% (100 runs sampled)
-_hotspot async 0 x 1,100,086 ops/sec ±0.52% (99 runs sampled)
- hotspot async 1 x 1,135,136 ops/sec ±0.43% (97 runs sampled)
-_hotspot async 1 x 1,069,446 ops/sec ±0.38% (101 runs sampled)
- hotspot async 2 x 1,139,549 ops/sec ±0.40% (103 runs sampled)
-_hotspot async 2 x 1,116,409 ops/sec ±0.23% (101 runs sampled)
- hotspot async 3 x 1,077,193 ops/sec ±0.46% (99 runs sampled)
-_hotspot async 3 x 1,100,045 ops/sec ±0.44% (98 runs sampled)
-Fastest is  hotspot async 2
- % node --version
-v0.10.40
- % node benchmark/incremental/async.js
- hotspot async 0 x 1,147,851 ops/sec ±0.30% (100 runs sampled)
-_hotspot async 0 x 1,261,159 ops/sec ±0.40% (94 runs sampled)
- hotspot async 1 x 1,142,285 ops/sec ±0.56% (97 runs sampled)
-_hotspot async 1 x 1,296,301 ops/sec ±0.29% (100 runs sampled)
- hotspot async 2 x 1,151,962 ops/sec ±0.47% (100 runs sampled)
-_hotspot async 2 x 1,289,719 ops/sec ±0.45% (98 runs sampled)
- hotspot async 3 x 1,148,957 ops/sec ±0.33% (98 runs sampled)
-_hotspot async 3 x 1,295,443 ops/sec ±0.22% (100 runs sampled)
-Fastest is _hotspot async 3,_hotspot async 2
-
-*/

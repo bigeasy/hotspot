@@ -13,8 +13,8 @@ function inc (count, callback) {
 }
 
 function body (async, count) {
-    if (count == COUNT) return [ async.done(), count ]
-    else return [ async.repeat(), count + 1 ]
+    if (count == COUNT) return [ async.break, count ]
+    else return [ async.continue, count + 1 ]
 }
 
 var m = hotspot(body)
