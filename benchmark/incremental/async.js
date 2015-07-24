@@ -1,4 +1,3 @@
-var ok = require('assert').ok
 var hotspot = require('../../hotspot')
 var hotspot_ = require('../../_hotspot')
 var Benchmark = require('benchmark')
@@ -10,17 +9,13 @@ function body (async) { async()(null, 1) }
 var m = hotspot(body)
 
 function fn () {
-    m(function (error, result) {
-        ok(result == 1, 'callback')
-    })
+    m(function () {})
 }
 
 var m_ = hotspot_(body)
 
 function fn_ () {
-    m_(function (error, result) {
-        ok(result == 1, 'callback')
-    })
+    m_(function () {})
 }
 
 for (var i = 0; i < 4; i++)  {

@@ -1,9 +1,8 @@
-var ok = require('assert').ok
 var hotspot = require('../../hotspot')
 var _hotspot = require('../../_hotspot')
 var Benchmark = require('benchmark')
 
-var suite = new Benchmark.Suite('loop', { minSamples: 100 })
+var suite = new Benchmark.Suite('loop')
 
 var COUNT = 10
 
@@ -21,15 +20,13 @@ function body (async, count) {
 var m = hotspot(body)
 
 function fn () {
-    m(0, function (error, result) {
-    })
+    m(0, function () {})
 }
 
 var m_ = _hotspot(body)
 
 function fn_ () {
-    m_(0, function (error, result) {
-    })
+    m_(0, function () {})
 }
 
 for (var i = 1; i <= 4; i++) {
