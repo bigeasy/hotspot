@@ -123,9 +123,8 @@
     }
 
     function invoke (step) {
+        var vargs, cadence = step.cadence, steps = cadence.steps
         for (;;) {
-            var vargs, cadence = step.cadence, steps = cadence.steps
-
             if (step.errors.length) {
                 if (step.catcher) {
                     rescue(step)
