@@ -123,91 +123,87 @@
     }
 
     function invoke (step) {
-        while (step = _invoke(step)) { }
-    }
+        for (;;) {
+            var vargs, cadence = step.cadence, steps = cadence.steps
 
-    function _invoke (step) {
-        var vargs, cadence = step.cadence, steps = cadence.steps
-
-        if (step.errors.length) {
-            if (step.catcher) {
-                rescue(step)
-            } else {
-                cadence.done([ step.errors[0] ])
-            }
-            return null
-        }
-
-        if (step.results.length == 0) {
-            vargs = step.vargs
-            if (vargs[0] && vargs[0].token === token) {
-                step.index = vargs.shift().repeat ? -1 : cadence.steps.length - 1
-            }
-        } else {
-            vargs = []
-            for (var i = 0, I = step.results.length; i < I; i++) {
-                var vargs_ = step.results[i].vargs
-                for (var j = 0, J = vargs_.length; j < J; j++) {
-                    vargs.push(vargs_[j])
+            if (step.errors.length) {
+                if (step.catcher) {
+                    rescue(step)
+                } else {
+                    cadence.done([ step.errors[0] ])
                 }
+                break
             }
-        }
 
-        step = new Step(step.cadence, step.index + 1, vargs)
-
-        if (step.index == steps.length) {
-            cadence.done(vargs.length === 0 ? [] : [ null ].concat(vargs))
-            return null
-        }
-
-        var fn = steps[step.index]
-
-        if (Array.isArray(fn)) {
-            if (fn.length === 1) {
-                cadence.finalizers.push({ steps: fn, vargs: vargs })
-                return step
-            } else if (fn.length === 2) {
-                step.catcher = fn[1]
-                fn = fn[0]
-            } else if (fn.length === 3) {
-                var filter = fn
-                step.catcher = function (async, error) {
-                    if (filter[1].test(error.code || error.message)) {
-                        return filter[2](async, error)
-                    } else {
-                        throw error
+            if (step.results.length == 0) {
+                vargs = step.vargs
+                if (vargs[0] && vargs[0].token === token) {
+                    step.index = vargs.shift().repeat ? -1 : cadence.steps.length - 1
+                }
+            } else {
+                vargs = []
+                for (var i = 0, I = step.results.length; i < I; i++) {
+                    var vargs_ = step.results[i].vargs
+                    for (var j = 0, J = vargs_.length; j < J; j++) {
+                        vargs.push(vargs_[j])
                     }
                 }
-                fn = fn[0]
+            }
+
+            step = new Step(step.cadence, step.index + 1, vargs)
+
+            if (step.index == steps.length) {
+                cadence.done(vargs.length === 0 ? [] : [ null ].concat(vargs))
+                break
+            }
+
+            var fn = steps[step.index]
+
+            if (Array.isArray(fn)) {
+                if (fn.length === 1) {
+                    cadence.finalizers.push({ steps: fn, vargs: vargs })
+                    continue
+                } else if (fn.length === 2) {
+                    step.catcher = fn[1]
+                    fn = fn[0]
+                } else if (fn.length === 3) {
+                    var filter = fn
+                    step.catcher = function (async, error) {
+                        if (filter[1].test(error.code || error.message)) {
+                            return filter[2](async, error)
+                        } else {
+                            throw error
+                        }
+                    }
+                    fn = fn[0]
+                } else {
+                    step.vargs = [ step.vargs ]
+                    continue
+                }
+            }
+
+            vargs.unshift(async)
+
+            stack.push(step)
+
+            var ret = call(fn, cadence.self, vargs)
+                   // ^^^^
+
+            stack.pop()
+
+            if (ret.length === 2) {
+                step.errors.push(ret[1])
+                step.vargs = vargs
+                step.sync = true
             } else {
-                step.vargs = [ step.vargs ]
-                return step
+                step.vargs = [].concat(ret[0] === void(0) ? vargs.slice(1) : ret[0])
+            }
+
+            if (!step.sync) {
+                step.next = step
+                break
             }
         }
-
-        vargs.unshift(async)
-
-        stack.push(step)
-
-        var ret = call(fn, cadence.self, vargs)
-               // ^^^^
-
-        stack.pop()
-
-        if (ret.length === 2) {
-            step.errors.push(ret[1])
-            step.vargs = vargs
-            step.sync = true
-        } else {
-            step.vargs = [].concat(ret[0] === void(0) ? vargs.slice(1) : ret[0])
-        }
-
-        if (step.sync) {
-            return step
-        }
-
-        step.next = step
-        return null
     }
 
     function finalize (cadence, errors, callback, vargs) {
