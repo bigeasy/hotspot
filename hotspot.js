@@ -76,8 +76,8 @@
         return stack[stack.length - 1].createCallback()
     }
 
-    async.continue = { token: token, repeat: true }
-    async.break = { token: token, repeat: false }
+    async.continue = { token: token, index: -1 }
+    async.break = { token: token, index: 0x7fffffff - 1 }
 
     function call (fn, self, vargs) {
         try {
@@ -138,7 +138,7 @@
             if (step.results.length == 0) {
                 vargs = step.vargs
                 if (vargs[0] && vargs[0].token === token) {
-                    step.index = vargs.shift().repeat ? -1 : cadence.steps.length - 1
+                    step.index = vargs.shift().index
                 }
             } else {
                 vargs = []
@@ -152,7 +152,7 @@
 
             step = new Step(step.cadence, step.index + 1, vargs)
 
-            if (step.index == steps.length) {
+            if (step.index >= steps.length) {
                 if (vargs.length !== 0) {
                     vargs.unshift(null)
                 }
