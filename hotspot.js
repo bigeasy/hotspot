@@ -64,6 +64,11 @@
                 vargs[i] = arguments[i]
             }
             self.callback(result, vargs)
+
+            return
+
+            /* istanbul ignore next */
+            try {} catch (e) {}
         }
     }
 
