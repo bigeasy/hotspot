@@ -76,13 +76,8 @@
         return stack[stack.length - 1].createCallback()
     }
 
-    async.repeat = function () {
-        return { token: token, repeat: true }
-    }
-
-    async.done = function () {
-        return { token: token, repeat: false }
-    }
+    async.continue = { token: token, repeat: true }
+    async.break = { token: token, repeat: false }
 
     function call (fn, self, vargs) {
         try {
