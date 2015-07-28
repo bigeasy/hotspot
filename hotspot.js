@@ -100,7 +100,7 @@ function rescue (cadence) {
                     cadence.results.length = 0
                 }
             }
-        ], [ error, done ])
+        ], [ error ], done)
 
         function done (error) {
             if (error) {
@@ -121,7 +121,7 @@ function finalize (cadence, errors, callback, vargs) {
         }
     } else {
         var finalizer = cadence.finalizers.pop()
-        execute(cadence.self, finalizer.steps, finalizer.vargs.concat(done))
+        execute(cadence.self, finalizer.steps, finalizer.vargs, done)
     }
     function done (error) {
         if (error) {
@@ -220,97 +220,25 @@ function invoke (cadence) {
     }
 }
 
-function execute (self, steps, vargs) {
-    var cadence = new Cadence(self, steps, vargs.pop(), vargs)
+function execute (self, steps, vargs, callback) {
+    var cadence = new Cadence(self, steps, callback, vargs)
     invoke(cadence)
 }
 
 function hotspot () {
     var I = arguments.length
-    var vargs = []
+    var steps = new Array
     for (var i = 0; i < I; i++) {
-        vargs[i] = arguments[i]
+        steps.push(arguments[i])
     }
-    return _hotspot(vargs)
-}
-
-function _hotspot (steps) {
-    var f
-
-    switch (steps[0].length) {
-    case 0:
-        f = function () {
-            var I = arguments.length
-            var vargs = []
-            for (var i = 0; i < I; i++) {
-                vargs[i] = arguments[i]
-            }
-            execute(this, steps, vargs)
+    return function () {
+        var I = arguments.length
+        var vargs = new Array
+        for (var i = 0; i < I - 1; i++) {
+            vargs.push(arguments[i])
         }
-        break
-    case 1:
-        f = function (one) {
-            var I = arguments.length
-            var vargs = []
-            for (var i = 0; i < I; i++) {
-                vargs[i] = arguments[i]
-            }
-            execute(this, steps, vargs)
-        }
-        break
-    case 2:
-        f = function (one, two) {
-            var I = arguments.length
-            var vargs = []
-            for (var i = 0; i < I; i++) {
-                vargs[i] = arguments[i]
-            }
-            execute(this, steps, vargs)
-        }
-        break
-    case 3:
-        f = function (one, two, three) {
-            var I = arguments.length
-            var vargs = []
-            for (var i = 0; i < I; i++) {
-                vargs[i] = arguments[i]
-            }
-            execute(this, steps, vargs)
-        }
-        break
-    case 4:
-        f = function (one, two, three, four) {
-            var I = arguments.length
-            var vargs = []
-            for (var i = 0; i < I; i++) {
-                vargs[i] = arguments[i]
-            }
-            execute(this, steps, vargs)
-        }
-        break
-    default:
-        // Avert your eyes if you're squeamish.
-        var args = []
-        for (var i = 0, I = steps[0].length; i < I; i++) {
-            args[i] = '_' + i
-        }
-        var f = (new Function('execute', 'steps', 'async', '                \n\
-            return function (' + args.join(',') + ') {                      \n\
-                var I = arguments.length                                    \n\
-                var vargs = []                                              \n\
-                for (var i = 0; i < I; i++) {                               \n\
-                    vargs[i] = arguments[i]                                 \n\
-                }                                                           \n\
-                execute(this, steps, vargs)                                 \n\
-            }                                                               \n\
-       '))(execute, steps, async)
+        execute(this, steps, vargs, arguments[i])
     }
-
-    f.toString = function () { return steps[0].toString() }
-
-    f.isCadence = true
-
-    return f
 }
 
 module.exports = hotspot
