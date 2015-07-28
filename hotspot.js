@@ -112,6 +112,25 @@ function rescue (cadence) {
     }
 }
 
+function finalize (cadence, errors, callback, vargs) {
+    if (cadence.finalizers.length == 0) {
+        if (errors.length === 0) {
+            callback.apply(null, vargs)
+        } else {
+            callback.apply(null, [ errors[0] ])
+        }
+    } else {
+        var finalizer = cadence.finalizers.pop()
+        execute(cadence.self, finalizer.steps, finalizer.vargs.concat(done))
+    }
+    function done (error) {
+        if (error) {
+            errors.push(error)
+        }
+        finalize(cadence, errors, callback, vargs)
+    }
+}
+
 function invoke (cadence) {
     var vargs, steps = cadence.steps
     for (;;) {
@@ -198,25 +217,6 @@ function invoke (cadence) {
             cadence.waiting = true
             break
         }
-    }
-}
-
-function finalize (cadence, errors, callback, vargs) {
-    if (cadence.finalizers.length == 0) {
-        if (errors.length === 0) {
-            callback.apply(null, vargs)
-        } else {
-            callback.apply(null, [ errors[0] ])
-        }
-    } else {
-        var finalizer = cadence.finalizers.pop()
-        execute(cadence.self, finalizer.steps, finalizer.vargs.concat(done))
-    }
-    function done (error) {
-        if (error) {
-            errors.push(error)
-        }
-        finalize(cadence, errors, callback, vargs)
     }
 }
 
