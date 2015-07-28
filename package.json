@@ -10,7 +10,7 @@
     "contributors":     [],
     "homepage":         "https://github.com/bigeasy/hotspot",
     "bugs":             "https://github.com/bigeasy/hotspot/issues",
-    "main":             "hotspot",
+    "main":             "hotspot.js",
     "license":          "MIT",
     "repository":
     {

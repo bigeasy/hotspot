@@ -1,7 +1,7 @@
 require('proof')(7, prove)
 
 function prove (assert) {
-    var hotspot = require('../..')
+    var hotspot = require('../../hotspot')
     var abend = require('abend')
 
     hotspot([function () {

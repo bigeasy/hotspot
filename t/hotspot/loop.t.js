@@ -1,7 +1,7 @@
 require('proof')(1, prove)
 
 function prove (assert) {
-    var hotspot = require('../..')
+    var hotspot = require('../../hotspot')
 
     hotspot(function (async, count) {
         if (count < 1) return [ async.continue, count + 1 ]

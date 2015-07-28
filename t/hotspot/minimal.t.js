@@ -1,7 +1,7 @@
 require('proof')(2, require('cadence/redux')(prove))
 
 function prove (async, assert) {
-    var hotspot = require('../..')
+    var hotspot = require('../../hotspot')
 
     function echo (value, callback) {
         callback(null, value)
