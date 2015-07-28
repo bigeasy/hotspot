@@ -1,8 +1,7 @@
 require('proof')(1, prove)
 
-function prove (assert) {
+function prove (assert, callback) {
     var hotspot = require('../..')
-    var abend = require('abend')
     hotspot(function (async) {
         var callback = async()
         async()(null, 3)
@@ -11,5 +10,6 @@ function prove (assert) {
         })
     })(function (error, one, two, three) {
         assert([ one, two, three ], [ 1, 2, 3 ], 'heterogeneous')
+        callback()
     })
 }
