@@ -137,6 +137,7 @@ function invoke (cadence) {
                     vargs.push(vargs_[j])
                 }
             }
+            cadence.vargs = vargs
         }
 
         if (cadence.index === steps.length) {
@@ -189,8 +190,8 @@ function invoke (cadence) {
             cadence.errors.push(ret[1])
             cadence.vargs = vargs
             cadence.sync = true
-        } else {
-            cadence.vargs = [].concat(ret[0] === void(0) ? vargs.slice(1) : ret[0])
+        } else if (ret[0] !== void(0)) {
+            cadence.vargs = [].concat(ret[0])
         }
 
         if (!cadence.sync) {
