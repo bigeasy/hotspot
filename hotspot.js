@@ -207,7 +207,6 @@ function invoke (cadence) {
 
         if (ret.length === 2) {
             cadence.errors.push(ret[1])
-            cadence.vargs = vargs
             cadence.sync = true
         } else if (ret[0] !== void(0)) {
             cadence.vargs = [].concat(ret[0])
