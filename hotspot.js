@@ -100,13 +100,13 @@ Cadence.prototype.finalize = function (vargs) {
         (this.callback).apply(null, vargs)
     } else {
         var finalizer = this.finalizers.pop()
-        execute(this.self, finalizer.steps, finalizer.vargs, function (error) {
+        invoke(new Cadence(this.self, finalizer.steps, finalizer.vargs, function (error) {
             if (error) {
                 this.errors.push(error)
                 vargs = [ this.errors[0] ]
             }
             this.finalize(vargs)
-        }.bind(this))
+        }.bind(this)))
     }
 }
 
@@ -202,11 +202,6 @@ function invoke (cadence) {
     }
 }
 
-function execute (self, steps, vargs, callback) {
-    var cadence = new Cadence(self, steps, vargs, callback)
-    invoke(cadence)
-}
-
 function hotspot () {
     var I = arguments.length
     var steps = new Array
@@ -219,7 +214,7 @@ function hotspot () {
         for (var i = 0; i < I - 1; i++) {
             vargs.push(arguments[i])
         }
-        execute(this, steps, vargs, arguments[i])
+        invoke(new Cadence(this, steps, vargs, arguments[i]))
     }
 }
 
