@@ -1,5 +1,22 @@
 var stack = [], push = [].push, token = {}
 
+function Callback (cadence, result) {
+    var self = this
+    this.cadence = cadence
+    this.result = result
+    this.callback = callback
+    function callback () {
+        var vargs = new Array
+        for (var i = 0, I = arguments.length; i < I; i++) {
+            vargs[i] = arguments[i]
+        }
+        callbacks.push(self)
+        self.cadence.resolveCallback(self.result, vargs)
+    }
+}
+
+var callbacks = []
+
 function Cadence (self, steps, vargs, callback) {
     this.self = self
     this.finalizers = new Array
@@ -32,27 +49,20 @@ Cadence.prototype.resolveCallback = function (result, vargs) {
 }
 
 Cadence.prototype.createCallback = function () {
-    var self = this
-    var result = { vargs: [] }
+    var result = { vargs: [] }, callback
 
-    self.results.push(result)
-    self.sync = false
+    this.results.push(result)
+    this.sync = false
 
-    return callback
-
-    function callback () { // benchmark using bind(this).
-        var I = arguments.length
-        var vargs = new Array
-        for (var i = 0; i < I; i++) {
-            vargs[i] = arguments[i]
-        }
-        self.resolveCallback(result, vargs)
-
-        return
-
-        /* istanbul ignore next */
-        try {} catch (e) {}
+    if (callbacks.length === 0) {
+        callback = new Callback(this, result)
+    } else {
+        callback = callbacks.pop()
+        callback.cadence = this
+        callback.result = result
     }
+
+    return callback.callback
 }
 
 function async () {

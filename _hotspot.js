@@ -1,6 +1,6 @@
 var stack = [], push = [].push, token = {}
 
-function Cadence (self, steps, callback, vargs) {
+function Cadence (self, steps, vargs, callback) {
     this.self = self
     this.finalizers = new Array
     this.steps = steps
@@ -12,6 +12,7 @@ function Cadence (self, steps, callback, vargs) {
     this.called = 0
     this.sync = true
     this.waiting = false
+    this.cadence = this
 }
 
 Cadence.prototype.resolveCallback = function (result, vargs) {
@@ -70,39 +71,19 @@ function call (fn, self, vargs) {
     return [ ret ]
 }
 
-function rescue (cadence) {
-    if (cadence.errors.length === 0) {
-        invoke(cadence)
-    } else {
-        var error = cadence.errors.shift()
-
-        execute(cadence.self, [
-            cadence.catcher,
-            function () {
-                var I = arguments.length
-                var vargs = []
-                for (var i = 0; i < I; i++) {
-                    vargs[i] = arguments[i]
-                }
-                // kind of loosey-goosey, this test to see if the user
-                // specified arguments or not, what if the dear user wants
-                // to return the error as the first non-error result?
-                if (vargs[1] !== error) {
-                    cadence.vargs = vargs.slice(1)
-                    cadence.results.length = 0
-                }
-            }
-        ], [ error ], done)
-
-        function done (error) {
-            if (error) {
-                cadence.errors = [ error ]
-                cadence.finalize([ cadence.errors[0] ])
-            } else {
-                rescue(cadence)
-            }
-        }
-    }
+Cadence.prototype.rescue = function () {
+    var errors = this.errors, catcher = this.catcher
+    this.errors = new Array
+    this.results = new Array
+    this.catcher = null
+    this.called = 0
+    this.waiting = true
+    var callback = this.createCallback()
+    var steps = [ function () { return catcher(async, errors[0], errors) } ]
+    var rescue = new Cadence(this.self, steps, this.vargs, callback)
+    rescue.waiting = true
+    rescue.cadence = this
+    invoke(rescue)
 }
 
 Cadence.prototype.finalize = function (vargs) {
@@ -125,7 +106,7 @@ function invoke (cadence) {
     for (;;) {
         if (cadence.errors.length) {
             if (cadence.catcher) {
-                rescue(cadence)
+                cadence.rescue()
             } else {
                 cadence.finalize([ cadence.errors[0] ])
             }
@@ -135,7 +116,7 @@ function invoke (cadence) {
         if (cadence.results.length == 0) {
             vargs = cadence.vargs
             if (vargs[0] && vargs[0].token === token) {
-                cadence.index = vargs.shift().repeat ? 0 : cadence.steps.length
+                cadence.cadence.index = vargs.shift().repeat ? 0 : cadence.cadence.steps.length
             }
         } else {
             vargs = []
@@ -202,7 +183,7 @@ function invoke (cadence) {
             cadence.errors.push(ret[1])
             cadence.sync = true
         } else if (ret[0] !== void(0)) {
-            cadence.vargs = [].concat(ret[0])
+            cadence.vargs = Array.isArray(ret[0]) ? ret[0] : [ ret[0] ]
         }
 
         if (!cadence.sync) {
@@ -213,7 +194,7 @@ function invoke (cadence) {
 }
 
 function execute (self, steps, vargs, callback) {
-    var cadence = new Cadence(self, steps, callback, vargs)
+    var cadence = new Cadence(self, steps, vargs, callback)
     invoke(cadence)
 }
 
@@ -240,66 +221,66 @@ module.exports = hotspot
  % node --version
 v0.10.40
  % node benchmark/increment/call.js
- hotspot call 1 x 1,563,802 ops/sec ±1.04% (97 runs sampled)
-_hotspot call 1 x 762,782 ops/sec ±0.73% (96 runs sampled)
- hotspot call 2 x 1,589,432 ops/sec ±0.57% (98 runs sampled)
-_hotspot call 2 x 775,095 ops/sec ±0.55% (98 runs sampled)
- hotspot call 3 x 1,596,848 ops/sec ±0.43% (102 runs sampled)
-_hotspot call 3 x 783,170 ops/sec ±0.52% (96 runs sampled)
- hotspot call 4 x 1,571,311 ops/sec ±0.32% (101 runs sampled)
-_hotspot call 4 x 779,016 ops/sec ±0.49% (94 runs sampled)
-Fastest is  hotspot call 3, hotspot call 2
+ hotspot call 1 x 1,549,705 ops/sec ±1.09% (95 runs sampled)
+_hotspot call 1 x 1,514,823 ops/sec ±0.97% (95 runs sampled)
+ hotspot call 2 x 1,582,020 ops/sec ±0.69% (100 runs sampled)
+_hotspot call 2 x 1,574,727 ops/sec ±0.67% (101 runs sampled)
+ hotspot call 3 x 1,581,228 ops/sec ±0.55% (101 runs sampled)
+_hotspot call 3 x 1,574,346 ops/sec ±0.61% (100 runs sampled)
+ hotspot call 4 x 1,589,828 ops/sec ±0.50% (102 runs sampled)
+_hotspot call 4 x 1,585,091 ops/sec ±0.40% (98 runs sampled)
+Fastest is  hotspot call 4,_hotspot call 4, hotspot call 2
  % node benchmark/increment/async.js
- hotspot async 1 x 1,767,073 ops/sec ±0.23% (98 runs sampled)
-_hotspot async 1 x 1,773,479 ops/sec ±0.35% (96 runs sampled)
- hotspot async 2 x 1,777,444 ops/sec ±0.51% (96 runs sampled)
-_hotspot async 2 x 1,788,729 ops/sec ±0.44% (101 runs sampled)
- hotspot async 3 x 1,798,178 ops/sec ±0.42% (99 runs sampled)
-_hotspot async 3 x 1,798,422 ops/sec ±0.25% (101 runs sampled)
- hotspot async 4 x 1,801,482 ops/sec ±0.40% (100 runs sampled)
-_hotspot async 4 x 1,745,822 ops/sec ±0.30% (101 runs sampled)
-Fastest is  hotspot async 4, hotspot async 3
+ hotspot async 1 x 1,811,909 ops/sec ±0.33% (100 runs sampled)
+_hotspot async 1 x 1,682,017 ops/sec ±0.37% (99 runs sampled)
+ hotspot async 2 x 1,790,298 ops/sec ±0.54% (102 runs sampled)
+_hotspot async 2 x 1,754,861 ops/sec ±0.36% (102 runs sampled)
+ hotspot async 3 x 1,814,631 ops/sec ±0.47% (95 runs sampled)
+_hotspot async 3 x 1,751,290 ops/sec ±0.39% (103 runs sampled)
+ hotspot async 4 x 1,803,978 ops/sec ±0.37% (102 runs sampled)
+_hotspot async 4 x 1,725,051 ops/sec ±0.52% (97 runs sampled)
+Fastest is  hotspot async 3, hotspot async 1
  % node benchmark/increment/loop.js
- hotspot loop 1 x 382,954 ops/sec ±0.30% (98 runs sampled)
-_hotspot loop 1 x 287,879 ops/sec ±0.17% (102 runs sampled)
- hotspot loop 2 x 384,461 ops/sec ±0.38% (103 runs sampled)
-_hotspot loop 2 x 288,020 ops/sec ±0.28% (102 runs sampled)
- hotspot loop 3 x 381,264 ops/sec ±0.37% (102 runs sampled)
-_hotspot loop 3 x 287,536 ops/sec ±0.19% (103 runs sampled)
- hotspot loop 4 x 380,121 ops/sec ±0.35% (99 runs sampled)
-_hotspot loop 4 x 286,170 ops/sec ±0.42% (101 runs sampled)
-Fastest is  hotspot loop 2
+ hotspot loop 1 x 377,259 ops/sec ±0.32% (97 runs sampled)
+_hotspot loop 1 x 383,929 ops/sec ±0.50% (99 runs sampled)
+ hotspot loop 2 x 377,737 ops/sec ±0.53% (99 runs sampled)
+_hotspot loop 2 x 382,410 ops/sec ±0.40% (100 runs sampled)
+ hotspot loop 3 x 376,151 ops/sec ±0.54% (101 runs sampled)
+_hotspot loop 3 x 386,458 ops/sec ±0.42% (99 runs sampled)
+ hotspot loop 4 x 378,292 ops/sec ±0.43% (100 runs sampled)
+_hotspot loop 4 x 385,004 ops/sec ±0.39% (100 runs sampled)
+Fastest is _hotspot loop 3
  % node --version
 v0.12.7
  % node benchmark/increment/call.js
- hotspot call 1 x 1,925,404 ops/sec ±0.20% (102 runs sampled)
-_hotspot call 1 x 929,676 ops/sec ±0.42% (101 runs sampled)
- hotspot call 2 x 1,844,858 ops/sec ±0.41% (99 runs sampled)
-_hotspot call 2 x 925,975 ops/sec ±0.28% (98 runs sampled)
- hotspot call 3 x 2,041,703 ops/sec ±0.41% (100 runs sampled)
-_hotspot call 3 x 908,589 ops/sec ±0.29% (102 runs sampled)
- hotspot call 4 x 2,023,581 ops/sec ±0.43% (101 runs sampled)
-_hotspot call 4 x 908,174 ops/sec ±0.29% (102 runs sampled)
-Fastest is  hotspot call 3
+ hotspot call 1 x 1,917,627 ops/sec ±0.47% (102 runs sampled)
+_hotspot call 1 x 2,038,960 ops/sec ±1.09% (94 runs sampled)
+ hotspot call 2 x 2,036,501 ops/sec ±0.38% (100 runs sampled)
+_hotspot call 2 x 2,063,463 ops/sec ±0.41% (99 runs sampled)
+ hotspot call 3 x 2,060,888 ops/sec ±0.44% (101 runs sampled)
+_hotspot call 3 x 2,023,157 ops/sec ±0.46% (98 runs sampled)
+ hotspot call 4 x 2,040,165 ops/sec ±0.47% (99 runs sampled)
+_hotspot call 4 x 1,999,119 ops/sec ±0.45% (102 runs sampled)
+Fastest is _hotspot call 2, hotspot call 3,_hotspot call 1
  % node benchmark/increment/async.js
- hotspot async 1 x 1,710,808 ops/sec ±0.25% (101 runs sampled)
-_hotspot async 1 x 1,731,288 ops/sec ±0.32% (102 runs sampled)
- hotspot async 2 x 1,696,016 ops/sec ±0.39% (97 runs sampled)
-_hotspot async 2 x 1,708,534 ops/sec ±0.65% (102 runs sampled)
- hotspot async 3 x 1,727,533 ops/sec ±0.15% (102 runs sampled)
-_hotspot async 3 x 1,721,008 ops/sec ±0.19% (103 runs sampled)
- hotspot async 4 x 1,707,307 ops/sec ±0.24% (102 runs sampled)
-_hotspot async 4 x 1,703,485 ops/sec ±0.17% (103 runs sampled)
-Fastest is _hotspot async 1,_hotspot async 2
+ hotspot async 1 x 1,949,655 ops/sec ±0.47% (94 runs sampled)
+_hotspot async 1 x 1,773,505 ops/sec ±0.34% (101 runs sampled)
+ hotspot async 2 x 1,895,151 ops/sec ±1.02% (100 runs sampled)
+_hotspot async 2 x 1,762,498 ops/sec ±0.56% (99 runs sampled)
+ hotspot async 3 x 1,905,617 ops/sec ±0.52% (101 runs sampled)
+_hotspot async 3 x 1,750,617 ops/sec ±0.41% (100 runs sampled)
+ hotspot async 4 x 1,936,477 ops/sec ±0.22% (101 runs sampled)
+_hotspot async 4 x 1,737,631 ops/sec ±0.46% (97 runs sampled)
+Fastest is  hotspot async 1
  % node benchmark/increment/loop.js
- hotspot loop 1 x 447,743 ops/sec ±0.26% (101 runs sampled)
-_hotspot loop 1 x 238,337 ops/sec ±0.31% (97 runs sampled)
- hotspot loop 2 x 436,949 ops/sec ±0.36% (101 runs sampled)
-_hotspot loop 2 x 236,490 ops/sec ±0.26% (100 runs sampled)
- hotspot loop 3 x 439,200 ops/sec ±0.35% (101 runs sampled)
-_hotspot loop 3 x 236,033 ops/sec ±0.24% (102 runs sampled)
- hotspot loop 4 x 434,493 ops/sec ±0.24% (101 runs sampled)
-_hotspot loop 4 x 233,657 ops/sec ±0.35% (100 runs sampled)
-Fastest is  hotspot loop 1
+ hotspot loop 1 x 446,972 ops/sec ±0.47% (101 runs sampled)
+_hotspot loop 1 x 446,618 ops/sec ±0.54% (98 runs sampled)
+ hotspot loop 2 x 442,753 ops/sec ±0.44% (101 runs sampled)
+_hotspot loop 2 x 443,990 ops/sec ±0.50% (98 runs sampled)
+ hotspot loop 3 x 440,590 ops/sec ±0.49% (101 runs sampled)
+_hotspot loop 3 x 444,123 ops/sec ±0.27% (102 runs sampled)
+ hotspot loop 4 x 439,643 ops/sec ±0.44% (101 runs sampled)
+_hotspot loop 4 x 435,806 ops/sec ±0.38% (100 runs sampled)
+Fastest is  hotspot loop 1,_hotspot loop 1
 
 */
