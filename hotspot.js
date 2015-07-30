@@ -1,6 +1,6 @@
 var stack = [], push = [].push, token = {}
 
-function Cadence (self, steps, callback, vargs) {
+function Cadence (self, steps, vargs, callback) {
     this.self = self
     this.finalizers = new Array
     this.steps = steps
@@ -12,6 +12,7 @@ function Cadence (self, steps, callback, vargs) {
     this.called = 0
     this.sync = true
     this.waiting = false
+    this.cadence = this
 }
 
 Cadence.prototype.resolveCallback = function (result, vargs) {
@@ -70,39 +71,19 @@ function call (fn, self, vargs) {
     return [ ret ]
 }
 
-function rescue (cadence) {
-    if (cadence.errors.length === 0) {
-        invoke(cadence)
-    } else {
-        var error = cadence.errors.shift()
-
-        execute(cadence.self, [
-            cadence.catcher,
-            function () {
-                var I = arguments.length
-                var vargs = []
-                for (var i = 0; i < I; i++) {
-                    vargs[i] = arguments[i]
-                }
-                // kind of loosey-goosey, this test to see if the user
-                // specified arguments or not, what if the dear user wants
-                // to return the error as the first non-error result?
-                if (vargs[1] !== error) {
-                    cadence.vargs = vargs.slice(1)
-                    cadence.results.length = 0
-                }
-            }
-        ], [ error ], done)
-
-        function done (error) {
-            if (error) {
-                cadence.errors = [ error ]
-                cadence.finalize([ cadence.errors[0] ])
-            } else {
-                rescue(cadence)
-            }
-        }
-    }
+Cadence.prototype.rescue = function () {
+    var errors = this.errors, catcher = this.catcher
+    this.errors = new Array
+    this.results = new Array
+    this.catcher = null
+    this.called = 0
+    this.waiting = true
+    var callback = this.createCallback()
+    var steps = [ function () { return catcher(async, errors[0], errors) } ]
+    var rescue = new Cadence(this.self, steps, this.vargs, callback)
+    rescue.waiting = true
+    rescue.cadence = this
+    invoke(rescue)
 }
 
 Cadence.prototype.finalize = function (vargs) {
@@ -125,7 +106,7 @@ function invoke (cadence) {
     for (;;) {
         if (cadence.errors.length) {
             if (cadence.catcher) {
-                rescue(cadence)
+                cadence.rescue()
             } else {
                 cadence.finalize([ cadence.errors[0] ])
             }
@@ -135,7 +116,7 @@ function invoke (cadence) {
         if (cadence.results.length == 0) {
             vargs = cadence.vargs
             if (vargs[0] && vargs[0].token === token) {
-                cadence.index = vargs.shift().repeat ? 0 : cadence.steps.length
+                cadence.cadence.index = vargs.shift().repeat ? 0 : cadence.cadence.steps.length
             }
         } else {
             vargs = []
@@ -213,7 +194,7 @@ function invoke (cadence) {
 }
 
 function execute (self, steps, vargs, callback) {
-    var cadence = new Cadence(self, steps, callback, vargs)
+    var cadence = new Cadence(self, steps, vargs, callback)
     invoke(cadence)
 }
 
