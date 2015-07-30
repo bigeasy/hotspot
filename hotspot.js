@@ -24,9 +24,9 @@ function Cadence (self, steps, vargs, callback) {
     this.callback = callback
     this.index = 0
     this.vargs = vargs
+    this.called = 0
     this.results = new Array
     this.errors = new Array
-    this.called = 0
     this.sync = true
     this.waiting = false
     this.cadence = this
