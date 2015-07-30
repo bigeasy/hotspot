@@ -14,14 +14,6 @@ function Cadence (self, steps, callback, vargs) {
     this.waiting = false
 }
 
-Cadence.prototype.done = function (vargs) {
-    if (this.finalizers.length == 0) {
-        this.callback.apply(null, vargs)
-    } else {
-        finalize(this, [], this.callback, vargs)
-    }
-}
-
 Cadence.prototype.resolveCallback = function (result, vargs) {
     var error = vargs.shift()
     if (error == null) {
@@ -104,7 +96,8 @@ function rescue (cadence) {
 
         function done (error) {
             if (error) {
-                cadence.done([ error ])
+                cadence.errors = [ error ]
+                cadence.finalize([ cadence.errors[0] ])
             } else {
                 rescue(cadence)
             }
@@ -112,22 +105,18 @@ function rescue (cadence) {
     }
 }
 
-function finalize (cadence, errors, callback, vargs) {
-    if (cadence.finalizers.length == 0) {
-        if (errors.length === 0) {
-            callback.apply(null, vargs)
-        } else {
-            callback.apply(null, [ errors[0] ])
-        }
+Cadence.prototype.finalize = function (vargs) {
+    if (this.finalizers.length == 0) {
+        (this.callback).apply(null, vargs)
     } else {
-        var finalizer = cadence.finalizers.pop()
-        execute(cadence.self, finalizer.steps, finalizer.vargs, done)
-    }
-    function done (error) {
-        if (error) {
-            errors.push(error)
-        }
-        finalize(cadence, errors, callback, vargs)
+        var finalizer = this.finalizers.pop()
+        execute(this.self, finalizer.steps, finalizer.vargs, function (error) {
+            if (error) {
+                this.errors.push(error)
+                vargs = [ this.errors[0] ]
+            }
+            this.finalize(vargs)
+        }.bind(this))
     }
 }
 
@@ -138,7 +127,7 @@ function invoke (cadence) {
             if (cadence.catcher) {
                 rescue(cadence)
             } else {
-                cadence.done([ cadence.errors[0] ])
+                cadence.finalize([ cadence.errors[0] ])
             }
             break
         }
@@ -163,7 +152,11 @@ function invoke (cadence) {
             if (vargs.length !== 0) {
                 vargs.unshift(null)
             }
-            cadence.done(vargs)
+            if (cadence.finalizers.length === 0) {
+                (cadence.callback).apply(null, vargs)
+            } else {
+                cadence.finalize(vargs)
+            }
             break
         }
 
