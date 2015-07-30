@@ -83,16 +83,15 @@ function call (fn, self, vargs) {
 
 Cadence.prototype.rescue = function () {
     var errors = this.errors, catcher = this.catcher
-    this.errors = new Array
-    this.results = new Array
-    this.catcher = null
     this.called = 0
+    this.results = new Array
+    this.errors = new Array
+    this.catcher = null
     this.waiting = true
-    var callback = this.createCallback()
     var steps = [ function () { return catcher(async, errors[0], errors) } ]
-    var rescue = new Cadence(this.self, steps, this.vargs, callback)
-    rescue.waiting = true
+    var rescue = new Cadence(this.self, steps, this.vargs, this.createCallback())
     rescue.cadence = this
+    rescue.waiting = true
     invoke(rescue)
 }
 
