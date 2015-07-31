@@ -13,7 +13,7 @@ function prove (assert) {
     hotspot([function () {
         throw new Error('thrown')
     }, function (async, error) {
-        return 1
+        return [ 1 ]
     }])(function (error, result) {
         assert(!error, 'no error')
         assert(result, 1, 'caught and replaced')

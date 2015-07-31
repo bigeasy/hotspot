@@ -3,7 +3,7 @@ require('proof')(2, prove)
 function prove (assert) {
     var hotspot = require('../../hotspot')
     hotspot(function () {
-        return 1
+        return [ 1 ]
     })(function (error, result) {
         if (error) throw error
         assert(result, 1, 'returned')
