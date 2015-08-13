@@ -79,7 +79,7 @@ function rescue (cadence) {
     copy.index = cadence.index
     copy.waiting = true
     var rescue = new Cadence(cadence.self, [
-        function () { return (cadence.catcher)(async, cadence.errors[0], cadence.errors) }
+        function () { return cadence.catcher.call(this, async, cadence.errors[0], cadence.errors) }
     ], cadence.vargs, createCallback(copy))
     rescue.cadence = copy
     rescue.waiting = true

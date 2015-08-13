@@ -1,14 +1,16 @@
-require('proof')(8, prove)
+require('proof')(9, prove)
 
 function prove (assert) {
     var hotspot = require('../../hotspot')
     var abend = require('abend')
 
+    var object = {}
     hotspot([function () {
         throw new Error('thrown')
     }, function (async, error) {
+        assert(this === object, 'this')
         assert(error.message, 'thrown', 'catch thrown')
-    }])(abend)
+    }]).call(object, abend)
 
     hotspot([function () {
         throw new Error('thrown')
