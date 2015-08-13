@@ -1,13 +1,13 @@
-var stack = [], token = {}, callbacks = []
+var stack = [], token = [], callbacks = []
 
 function Cadence (self, steps, vargs, callback) {
     this.self = self
-    this.finalizers = new Array
     this.steps = steps
     this.callback = callback
     this.index = 0
     this.vargs = vargs
     this.called = 0
+    this.finalizers = new Array
     this.results = new Array
     this.errors = new Array
     this.sync = true
@@ -17,10 +17,10 @@ function Cadence (self, steps, vargs, callback) {
 
 function resolveCallback (cadence, result, vargs) {
     var error = vargs.shift()
-    if (error == null) {
-        result.vargs = vargs
-    } else {
+    if (error) {
         cadence.errors.push(error)
+    } else {
+        result.vargs = vargs
     }
     if (++cadence.called === cadence.results.length) {
         if (cadence.waiting) {
