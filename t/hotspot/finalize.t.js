@@ -1,15 +1,17 @@
-require('proof')(2, prove)
+require('proof')(3, prove)
 
 function prove (assert) {
     var hotspot = require('../../hotspot')
     var abend = require('abend')
     var after = false
+    var object = {}
 
     hotspot([function () {
+        assert(object === this, 'this')
         assert(after, 'finalizing')
     }], function () {
         after = true
-    })(abend)
+    }).call(object, abend)
 
     hotspot([function () {
         throw new Error('thrown')
