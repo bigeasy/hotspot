@@ -146,6 +146,8 @@ function invoke (cadence) {
         cadence.called = 0
         cadence.results = new Array
         cadence.errors = new Array
+        cadence.sync = true
+        cadence.waiting = false
 
         if (Array.isArray(fn)) {
             if (fn.length === 1) {
