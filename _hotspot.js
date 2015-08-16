@@ -1,30 +1,13 @@
-var stack = [], push = [].push, token = {}
-
-function Callback (cadence, result) {
-    var self = this
-    this.cadence = cadence
-    this.result = result
-    this.callback = callback
-    function callback () {
-        var vargs = new Array
-        for (var i = 0, I = arguments.length; i < I; i++) {
-            vargs[i] = arguments[i]
-        }
-        callbacks.push(self)
-        self.cadence.resolveCallback(self.result, vargs)
-    }
-}
-
-var callbacks = []
+var stack = [], token = [], callbacks = []
 
 function Cadence (self, steps, vargs, callback) {
     this.self = self
-    this.finalizers = new Array
     this.steps = steps
     this.callback = callback
     this.index = 0
     this.vargs = vargs
     this.called = 0
+    this.finalizers = new Array
     this.results = new Array
     this.errors = new Array
     this.sync = true
@@ -32,33 +15,44 @@ function Cadence (self, steps, vargs, callback) {
     this.cadence = this
 }
 
-Cadence.prototype.resolveCallback = function (result, vargs) {
+function resolveCallback (cadence, result, vargs) {
     var error = vargs.shift()
-    if (error == null) {
-        result.vargs = vargs
+    if (error) {
+        cadence.errors.push(error)
     } else {
-        this.errors.push(error)
+        result.vargs = vargs
     }
-    if (++this.called === this.results.length) {
-        if (this.waiting) {
-            invoke(this)
+    if (++cadence.called === cadence.results.length) {
+        if (cadence.waiting) {
+            invoke(cadence)
         } else {
-            this.sync = true
+            cadence.sync = true
         }
     }
 }
 
-Cadence.prototype.createCallback = function () {
+function createCallback (cadence) {
     var result = { vargs: [] }, callback
 
-    this.results.push(result)
-    this.sync = false
+    cadence.results.push(result)
+    cadence.sync = false
 
     if (callbacks.length === 0) {
-        callback = new Callback(this, result)
+        callback = {
+            cadence: cadence,
+            result: result,
+            callback: function () {
+                var vargs = new Array
+                for (var i = 0, I = arguments.length; i < I; i++) {
+                    vargs[i] = arguments[i]
+                }
+                callbacks.push(callback)
+                resolveCallback(callback.cadence, callback.result, vargs)
+            }
+        }
     } else {
         callback = callbacks.pop()
-        callback.cadence = this
+        callback.cadence = cadence
         callback.result = result
     }
 
@@ -66,7 +60,7 @@ Cadence.prototype.createCallback = function () {
 }
 
 function async () {
-    return stack[stack.length - 1].createCallback()
+    return createCallback(stack[stack.length - 1])
 }
 
 async.continue = { token: token, repeat: true }
@@ -74,39 +68,36 @@ async.break = { token: token, repeat: false }
 
 function call (fn, self, vargs) {
     try {
-        var ret = fn.apply(self, vargs)
+        return [ fn.apply(self, vargs) ]
     } catch (e) {
-        return [ ret, e ]
+        return [ null, e ]
     }
-    return [ ret ]
 }
 
-Cadence.prototype.rescue = function () {
-    var errors = this.errors, catcher = this.catcher
-    this.called = 0
-    this.results = new Array
-    this.errors = new Array
-    this.catcher = null
-    this.waiting = true
-    var steps = [ function () { return catcher.call(this, async, errors[0], errors) } ]
-    var rescue = new Cadence(this.self, steps, this.vargs, this.createCallback())
-    rescue.cadence = this
+function rescue (cadence) {
+    var copy = new Cadence(cadence.self, cadence.steps, cadence.vargs, cadence.callback)
+    copy.index = cadence.index
+    copy.waiting = true
+    var rescue = new Cadence(cadence.self, [
+        function () { return cadence.catcher.call(this, async, cadence.errors[0], cadence.errors) }
+    ], cadence.vargs, createCallback(copy))
+    rescue.cadence = copy
     rescue.waiting = true
     invoke(rescue)
 }
 
-Cadence.prototype.finalize = function (vargs) {
-    if (this.finalizers.length == 0) {
-        (this.callback).apply(null, vargs)
+function finalize (cadence, vargs) {
+    if (cadence.finalizers.length == 0) {
+        (cadence.callback).apply(null, vargs)
     } else {
-        var finalizer = this.finalizers.pop()
-        invoke(new Cadence(this.self, finalizer.steps, finalizer.vargs, function (error) {
+        var finalizer = cadence.finalizers.pop()
+        invoke(new Cadence(cadence.self, finalizer.steps, finalizer.vargs, function (error) {
             if (error) {
-                this.errors.push(error)
-                vargs = [ this.errors[0] ]
+                cadence.errors.push(error)
+                vargs = [ cadence.errors[0] ]
             }
-            this.finalize(vargs)
-        }.bind(this)))
+            finalize(cadence, vargs)
+        }))
     }
 }
 
@@ -115,9 +106,9 @@ function invoke (cadence) {
     for (;;) {
         if (cadence.errors.length) {
             if (cadence.catcher) {
-                cadence.rescue()
+                rescue(cadence)
             } else {
-                cadence.finalize([ cadence.errors[0] ])
+                finalize(cadence, [ cadence.errors[0] ])
             }
             break
         }
@@ -145,7 +136,7 @@ function invoke (cadence) {
             if (cadence.finalizers.length === 0) {
                 (cadence.callback).apply(null, vargs)
             } else {
-                cadence.finalize(vargs)
+                finalize(cadence, vargs)
             }
             break
         }
@@ -208,13 +199,13 @@ function hotspot () {
     var I = arguments.length
     var steps = new Array
     for (var i = 0; i < I; i++) {
-        steps.push(arguments[i])
+        steps[i] = arguments[i]
     }
     return function () {
         var I = arguments.length
         var vargs = new Array
         for (var i = 0; i < I - 1; i++) {
-            vargs.push(arguments[i])
+            vargs[i] = arguments[i]
         }
         invoke(new Cadence(this, steps, vargs, arguments[i]))
     }
