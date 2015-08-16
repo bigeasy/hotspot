@@ -66,21 +66,13 @@ function async () {
 async.continue = { token: token, repeat: true }
 async.break = { token: token, repeat: false }
 
-function call (fn, self, vargs) {
-    try {
-        return [ fn.apply(self, vargs) ]
-    } catch (e) {
-        return [ null, e ]
-    }
-}
-
 function rescue (cadence) {
     var copy = new Cadence(cadence.self, cadence.steps, cadence.vargs, cadence.callback)
     copy.index = cadence.index
     copy.waiting = true
-    var rescue = new Cadence(cadence.self, [
+    var rescue = new Cadence(cadence.self, [ wrap(
         function () { return cadence.catcher.call(this, async, cadence.errors[0], cadence.errors) }
-    ], cadence.vargs, createCallback(copy))
+    ) ], cadence.vargs, createCallback(copy))
     rescue.cadence = copy
     rescue.waiting = true
     invoke(rescue)
@@ -141,7 +133,7 @@ function invoke (cadence) {
             break
         }
 
-        var fn = steps[cadence.index++]
+        var step = steps[cadence.index++]
 
         cadence.called = 0
         cadence.results = new Array
@@ -149,35 +141,11 @@ function invoke (cadence) {
         cadence.sync = true
         cadence.waiting = false
 
-        if (Array.isArray(fn)) {
-            if (fn.length === 1) {
-                cadence.finalizers.push({ steps: fn, vargs: vargs })
-                continue
-            } else if (fn.length === 2) {
-                cadence.catcher = fn[1]
-                fn = fn[0]
-            } else if (fn.length === 3) {
-                var filter = fn
-                cadence.catcher = function (async, error) {
-                    if (filter[1].test(error.code || error.message)) {
-                        return filter[2](async, error)
-                    } else {
-                        throw error
-                    }
-                }
-                fn = fn[0]
-            } else {
-                cadence.vargs = [ vargs ]
-                continue
-            }
-        }
-
         vargs.unshift(async)
 
         stack.push(cadence)
 
-        var ret = call(fn, cadence.self, vargs)
-               // ^^^^
+        var ret = step(cadence)
 
         stack.pop()
 
@@ -195,11 +163,52 @@ function invoke (cadence) {
     }
 }
 
+function wrap (step) {
+    if (Array.isArray(step)) {
+        if (step.length === 1) {
+            return function (cadence) {
+                cadence.finalizers.push({ steps: [ wrap(step[0]) ], vargs: cadence.vargs })
+                return []
+            }
+        } else if (step.length === 2) {
+            var invocation = wrap(step[0])
+            return function (cadence) {
+                cadence.catcher = step[1]
+                return invocation(cadence)
+            }
+        } else if (step.length === 3) {
+            return wrap([
+                step[0],
+                function (async, error) {
+                    if (step[1].test(error.code || error.message)) {
+                        return step[2](async, error)
+                    } else {
+                        throw error
+                    }
+                }
+            ])
+        } else {
+            return function (cadence) {
+                cadence.vargs.shift()
+                return [ [ cadence.vargs ] ]
+            }
+        }
+    } else {
+        return function (cadence) {
+            try {
+                return [ step.apply(cadence.self, cadence.vargs) ]
+            } catch (error) {
+                return [ null, error ]
+            }
+        }
+    }
+}
+
 function hotspot () {
     var I = arguments.length
     var steps = new Array
     for (var i = 0; i < I; i++) {
-        steps[i] = arguments[i]
+        steps[i] = wrap(arguments[i])
     }
     return function () {
         var I = arguments.length

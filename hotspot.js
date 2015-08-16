@@ -15,8 +15,7 @@ function Cadence (self, steps, vargs, callback) {
     this.cadence = this
 }
 
-function resolveCallback (cadence, result, vargs) {
-    var error = vargs.shift()
+function resolveCallback (cadence, result, error, vargs) {
     if (error) {
         cadence.errors.push(error)
     } else {
@@ -41,13 +40,13 @@ function createCallback (cadence) {
         callback = {
             cadence: cadence,
             result: result,
-            callback: function () {
+            callback: function (error) {
                 var vargs = new Array
-                for (var i = 0, I = arguments.length; i < I; i++) {
-                    vargs[i] = arguments[i]
+                for (var i = 1, I = arguments.length; i < I; i++) {
+                    vargs[i - 1] = arguments[i]
                 }
                 callbacks.push(callback)
-                resolveCallback(callback.cadence, callback.result, vargs)
+                resolveCallback(callback.cadence, callback.result, error, vargs)
             }
         }
     } else {
