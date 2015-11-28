@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/bigeasy/hotspot.png?label=ready&title=Ready)](https://waffle.io/bigeasy/hotspot)
 [![Build Status](https://travis-ci.org/bigeasy/hotspot.svg)](https://travis-ci.org/bigeasy/hotspot) [![Coverage Status](https://coveralls.io/repos/bigeasy/hotspot/badge.svg?branch=master&service=github)](https://coveralls.io/github/bigeasy/hotspot?branch=master)
 
 # Hotspot
