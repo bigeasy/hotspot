@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/bigeasy/hotspot.svg)](https://travis-ci.org/bigeasy/hotspot) [![Coverage Status](https://coveralls.io/repos/bigeasy/hotspot/badge.svg?branch=master&service=github)](https://coveralls.io/github/bigeasy/hotspot?branch=master)
+
 # Hotspot
 
 An asynchronous control-flow library that courts the V8 JIT complier.
