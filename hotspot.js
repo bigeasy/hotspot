@@ -92,8 +92,44 @@ function finalize (cadence, vargs) {
     }
 }
 
+var _finalize = hotspot([function (async) {
+    if (this.finalizers.length) {
+        var finalizer = this.finalizers.pop()
+        finalizer.call(this.self, finalizer.vargs.concat(async()))
+    }
+}, function (async, error) {
+    this.errors.push(error)
+}])
+
+function finalize (cadence) {
+    _finalize.call(cadence, async())
+}
+
+// this would be the first step, reset would not be done in each loop, but in
+// each wrapper, and in Cadence the operator would be selected above.
+
+function begin (cadence) {
+    var done = false
+    if (cadence.finalizers.length) {
+        var finalizer = cadence.finalizers.pop()
+        // todo: make finalizer a hotspot.
+        finalizer.call(this.self, finalizer.vargs.concat(async()))
+    } if (cadence.errors.length) {
+        if (cadence.catcher) {
+        }
+        done = true
+    } else if (!cadence.loop) {
+        done = true
+    }
+    cadence.loop = false
+    if (done) {
+        cadence.sync = false
+    }
+    return []
+}
+
 function invoke (cadence) {
-    var vargs, steps = cadence.steps
+    var vargs, steps = cadence.steps, repeat = false
     for (;;) {
         if (cadence.errors.length) {
             if (cadence.catcher) {
@@ -107,7 +143,12 @@ function invoke (cadence) {
         if (cadence.results.length == 0) {
             vargs = cadence.vargs
             if (vargs[0] && vargs[0].token === token) {
-                cadence.cadence.index = vargs.shift().repeat ? 0 : cadence.cadence.steps.length
+                if (vargs.shift().repeat) {
+                    cadence.cadence.index = 0
+                    step = finalize
+                } else {
+                    cadence.cadence.index = steps.length
+                }
             }
         } else {
             vargs = []
@@ -126,13 +167,13 @@ function invoke (cadence) {
             }
             if (cadence.finalizers.length === 0) {
                 (cadence.callback).apply(null, vargs)
+                break
             } else {
-                finalize(cadence, vargs)
+                step = finalize
             }
-            break
+        } else {
+            step = steps[cadence.index++]
         }
-
-        var step = steps[cadence.index++]
 
         cadence.called = 0
         cadence.results = new Array
@@ -195,6 +236,7 @@ function wrap (step) {
     } else {
         return function (cadence) {
             try {
+                // todo: maybe put reset here, so ...
                 return [ step.apply(cadence.self, cadence.vargs) ]
             } catch (error) {
                 return [ null, error ]

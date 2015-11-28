@@ -1,0 +1,128 @@
+ % node --version
+v0.10.40
+ % node benchmark/increment/call.js
+ hotspot call 1 x 1,465,301 ops/sec ±1.21% (92 runs sampled)
+_hotspot call 1 x 1,566,557 ops/sec ±1.16% (97 runs sampled)
+ hotspot call 2 x 1,536,554 ops/sec ±0.71% (98 runs sampled)
+_hotspot call 2 x 1,679,385 ops/sec ±0.47% (100 runs sampled)
+ hotspot call 3 x 1,556,040 ops/sec ±0.38% (101 runs sampled)
+_hotspot call 3 x 1,669,101 ops/sec ±0.52% (101 runs sampled)
+ hotspot call 4 x 1,527,123 ops/sec ±1.27% (99 runs sampled)
+_hotspot call 4 x 1,687,424 ops/sec ±0.41% (100 runs sampled)
+Fastest is _hotspot call 4
+ % node benchmark/increment/async.js
+ hotspot async 1 x 1,873,162 ops/sec ±0.55% (95 runs sampled)
+_hotspot async 1 x 1,904,102 ops/sec ±0.45% (102 runs sampled)
+ hotspot async 2 x 1,884,888 ops/sec ±0.44% (102 runs sampled)
+_hotspot async 2 x 1,895,498 ops/sec ±0.51% (99 runs sampled)
+ hotspot async 3 x 1,883,582 ops/sec ±0.44% (101 runs sampled)
+_hotspot async 3 x 1,872,688 ops/sec ±0.47% (100 runs sampled)
+ hotspot async 4 x 1,902,567 ops/sec ±0.41% (100 runs sampled)
+_hotspot async 4 x 1,875,326 ops/sec ±0.49% (101 runs sampled)
+Fastest is _hotspot async 1, hotspot async 4,_hotspot async 2
+ % node benchmark/increment/loop.js
+ hotspot loop 1 x 365,632 ops/sec ±0.34% (94 runs sampled)
+_hotspot loop 1 x 378,635 ops/sec ±0.34% (102 runs sampled)
+ hotspot loop 2 x 366,512 ops/sec ±0.52% (101 runs sampled)
+_hotspot loop 2 x 382,205 ops/sec ±0.58% (101 runs sampled)
+ hotspot loop 3 x 368,636 ops/sec ±0.61% (100 runs sampled)
+_hotspot loop 3 x 382,886 ops/sec ±0.56% (101 runs sampled)
+ hotspot loop 4 x 365,702 ops/sec ±0.47% (101 runs sampled)
+_hotspot loop 4 x 384,244 ops/sec ±0.30% (103 runs sampled)
+Fastest is _hotspot loop 4,_hotspot loop 3,_hotspot loop 2
+ % node --version
+v0.12.7
+ % node benchmark/increment/call.js
+ hotspot call 1 x 2,068,449 ops/sec ±0.71% (100 runs sampled)
+_hotspot call 1 x 2,072,816 ops/sec ±0.75% (98 runs sampled)
+ hotspot call 2 x 2,078,067 ops/sec ±0.45% (101 runs sampled)
+_hotspot call 2 x 2,099,897 ops/sec ±0.72% (97 runs sampled)
+ hotspot call 3 x 2,066,486 ops/sec ±0.92% (100 runs sampled)
+_hotspot call 3 x 2,149,826 ops/sec ±0.46% (99 runs sampled)
+ hotspot call 4 x 2,095,288 ops/sec ±0.41% (100 runs sampled)
+_hotspot call 4 x 2,073,379 ops/sec ±0.56% (98 runs sampled)
+Fastest is _hotspot call 3
+ % node benchmark/increment/async.js
+ hotspot async 1 x 1,716,235 ops/sec ±0.29% (98 runs sampled)
+_hotspot async 1 x 1,992,335 ops/sec ±0.46% (101 runs sampled)
+ hotspot async 2 x 1,775,840 ops/sec ±0.49% (99 runs sampled)
+_hotspot async 2 x 1,941,681 ops/sec ±0.69% (99 runs sampled)
+ hotspot async 3 x 1,768,254 ops/sec ±0.44% (100 runs sampled)
+_hotspot async 3 x 1,969,516 ops/sec ±0.40% (99 runs sampled)
+ hotspot async 4 x 1,772,521 ops/sec ±0.56% (100 runs sampled)
+_hotspot async 4 x 1,891,349 ops/sec ±0.43% (98 runs sampled)
+Fastest is _hotspot async 1
+ % node benchmark/increment/loop.js
+ hotspot loop 1 x 466,605 ops/sec ±0.63% (99 runs sampled)
+_hotspot loop 1 x 460,627 ops/sec ±0.44% (101 runs sampled)
+ hotspot loop 2 x 455,629 ops/sec ±0.55% (98 runs sampled)
+_hotspot loop 2 x 467,350 ops/sec ±0.38% (103 runs sampled)
+ hotspot loop 3 x 458,137 ops/sec ±0.45% (100 runs sampled)
+_hotspot loop 3 x 459,125 ops/sec ±0.41% (100 runs sampled)
+ hotspot loop 4 x 449,556 ops/sec ±0.43% (99 runs sampled)
+_hotspot loop 4 x 451,430 ops/sec ±0.38% (99 runs sampled)
+Fastest is _hotspot loop 2
+ % node --version
+v4.2.2
+ % node benchmark/increment/call.js
+ hotspot call 1 x 2,056,508 ops/sec ±0.64% (93 runs sampled)
+_hotspot call 1 x 1,904,561 ops/sec ±0.87% (98 runs sampled)
+ hotspot call 2 x 1,918,863 ops/sec ±0.43% (96 runs sampled)
+_hotspot call 2 x 1,897,055 ops/sec ±0.74% (96 runs sampled)
+ hotspot call 3 x 1,945,734 ops/sec ±0.66% (96 runs sampled)
+_hotspot call 3 x 1,905,417 ops/sec ±0.47% (99 runs sampled)
+ hotspot call 4 x 1,952,280 ops/sec ±0.44% (101 runs sampled)
+_hotspot call 4 x 1,894,293 ops/sec ±0.64% (96 runs sampled)
+Fastest is  hotspot call 1
+ % node benchmark/increment/async.js
+ hotspot async 1 x 2,228,630 ops/sec ±0.57% (99 runs sampled)
+_hotspot async 1 x 2,260,664 ops/sec ±0.58% (99 runs sampled)
+ hotspot async 2 x 2,216,761 ops/sec ±0.47% (98 runs sampled)
+_hotspot async 2 x 2,257,621 ops/sec ±0.44% (100 runs sampled)
+ hotspot async 3 x 2,203,395 ops/sec ±0.53% (100 runs sampled)
+_hotspot async 3 x 2,251,427 ops/sec ±0.49% (102 runs sampled)
+ hotspot async 4 x 2,206,858 ops/sec ±0.51% (102 runs sampled)
+_hotspot async 4 x 2,113,568 ops/sec ±0.74% (96 runs sampled)
+Fastest is _hotspot async 2,_hotspot async 3
+ % node benchmark/increment/loop.js
+ hotspot loop 1 x 384,468 ops/sec ±0.44% (101 runs sampled)
+_hotspot loop 1 x 404,012 ops/sec ±0.51% (97 runs sampled)
+ hotspot loop 2 x 381,331 ops/sec ±0.38% (101 runs sampled)
+_hotspot loop 2 x 392,831 ops/sec ±0.71% (97 runs sampled)
+ hotspot loop 3 x 399,032 ops/sec ±0.84% (97 runs sampled)
+_hotspot loop 3 x 418,722 ops/sec ±0.49% (99 runs sampled)
+ hotspot loop 4 x 402,774 ops/sec ±0.50% (101 runs sampled)
+_hotspot loop 4 x 417,819 ops/sec ±0.68% (99 runs sampled)
+Fastest is _hotspot loop 3,_hotspot loop 4
+ % node --version
+v5.1.0
+ % node benchmark/increment/call.js
+ hotspot call 1 x 2,081,622 ops/sec ±0.40% (101 runs sampled)
+_hotspot call 1 x 2,026,997 ops/sec ±0.65% (96 runs sampled)
+ hotspot call 2 x 2,049,156 ops/sec ±0.44% (101 runs sampled)
+_hotspot call 2 x 2,015,159 ops/sec ±0.70% (102 runs sampled)
+ hotspot call 3 x 2,027,272 ops/sec ±0.61% (100 runs sampled)
+_hotspot call 3 x 1,994,592 ops/sec ±0.43% (101 runs sampled)
+ hotspot call 4 x 2,045,720 ops/sec ±0.55% (95 runs sampled)
+_hotspot call 4 x 2,000,506 ops/sec ±0.50% (100 runs sampled)
+Fastest is  hotspot call 1
+ % node benchmark/increment/async.js
+ hotspot async 1 x 2,253,385 ops/sec ±0.38% (100 runs sampled)
+_hotspot async 1 x 2,250,626 ops/sec ±0.61% (99 runs sampled)
+ hotspot async 2 x 2,268,649 ops/sec ±0.43% (102 runs sampled)
+_hotspot async 2 x 2,241,789 ops/sec ±0.55% (93 runs sampled)
+ hotspot async 3 x 2,271,859 ops/sec ±0.42% (100 runs sampled)
+_hotspot async 3 x 2,268,783 ops/sec ±0.44% (101 runs sampled)
+ hotspot async 4 x 2,260,879 ops/sec ±0.51% (99 runs sampled)
+_hotspot async 4 x 2,257,193 ops/sec ±0.36% (98 runs sampled)
+Fastest is  hotspot async 3, hotspot async 2,_hotspot async 3, hotspot async 4
+ % node benchmark/increment/loop.js
+ hotspot loop 1 x 450,795 ops/sec ±0.52% (101 runs sampled)
+_hotspot loop 1 x 448,746 ops/sec ±0.42% (99 runs sampled)
+ hotspot loop 2 x 446,025 ops/sec ±0.56% (96 runs sampled)
+_hotspot loop 2 x 448,171 ops/sec ±0.49% (100 runs sampled)
+ hotspot loop 3 x 449,830 ops/sec ±0.36% (100 runs sampled)
+_hotspot loop 3 x 439,640 ops/sec ±0.59% (97 runs sampled)
+ hotspot loop 4 x 448,499 ops/sec ±0.49% (102 runs sampled)
+_hotspot loop 4 x 443,205 ops/sec ±0.46% (102 runs sampled)
+Fastest is  hotspot loop 1
