@@ -22,7 +22,7 @@
     },
     "devDependencies":
     {
-                        "cadence":              "0.0.56",
+                        "cadence":              "0.4.3",
                         "proof":                "0.0.57",
                         "abend":                "0.0.0",
                         "uglify-js":            "~1.3"
