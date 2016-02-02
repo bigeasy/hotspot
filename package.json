@@ -24,7 +24,7 @@
     {
                         "cadence":              "1.x",
                         "proof":                "1.x",
-                        "abend":                "1.0.x",
+                        "abend":                "1.x",
                         "uglify-js":            "~1.3"
     },
     "scripts":
