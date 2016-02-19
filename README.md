@@ -5,7 +5,7 @@
 
 An asynchronous control-flow library that courts the V8 JIT complier.
 
-What you're about to see is a Cadence inpsired control-flow library that makes
+What you're about to see is a Cadence inspired control-flow library that makes
 asynchrnous steps available for JIT compilation and inlining.
 
 What do you need for error-first callback programming? Trampoline and a
