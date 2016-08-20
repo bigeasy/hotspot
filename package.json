@@ -1,36 +1,36 @@
 {
-    "name":                 "hotspot",
-    "version":              "0.0.1",
-    "author":               "Alan Gutierrez <alan@prettyrobots.com>",
+    "name":                  "hotspot",
+    "version":               "0.0.1",
+    "keywords":
+    [
+                             "http", "https", "rest", "json", "curl"
+    ],
     "description":
 
       "An asynchronous control-flow library that courts the V8 JIT complier.",
 
-    "keywords":
-    [
-                            "http", "https", "rest", "json", "curl"
-    ],
-    "homepage":             "https://github.com/bigeasy/hotspot",
-    "bugs":                 "https://github.com/bigeasy/hotspot/issues",
-    "main":                 "hotspot.js",
-    "license":              "MIT",
+    "author":                "Alan Gutierrez <alan@prettyrobots.com>",
+    "homepage":              "https://github.com/bigeasy/hotspot",
+    "bugs":                  "https://github.com/bigeasy/hotspot/issues",
+    "license":               "MIT",
     "repository":
     {
-                            "type": "git",
-                            "url": "http://github.com/bigeasy/hotspot.git"
+                             "type": "git",
+                             "url": "http://github.com/bigeasy/hotspot.git"
     },
     "dependencies":
     {
     },
     "devDependencies":
     {
-                            "cadence":                      "1.x",
-                            "proof":                        "1.x",
-                            "abend":                        "1.x",
-                            "uglify-js":                    "~1.3"
+                             "abend":                       "1.0.x",
+                             "cadence":                     "1.0.x",
+                             "proof":                       "1.1.x",
+                             "uglify-js":                   "1.3.x"
     },
+    "main":                  "hotspot",
     "scripts":
     {
-                            "test": "proof platform win32 && proof test */*/*.t.js || t/test"
+                             "test": "proof platform win32 && proof test */*/*.t.js || t/test"
     }
 }
