@@ -1,7 +1,7 @@
 require('proof')(2, prove)
 
 function prove (assert, callback) {
-    var hotspot = require('../../hotspot')
+    var hotspot = require('..')
     hotspot(function (async) {
         var callback = async()
         async()(null, 3)
