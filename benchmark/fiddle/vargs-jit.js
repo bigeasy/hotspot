@@ -3,7 +3,10 @@ var slice = [].slice
 
 var suite = new Benchmark.Suite
 
-function foo () {
+function foo (vargs) {
+    for (var i = 0, I = vargs.length; i < I; i++) {
+        vargs[i]++
+    }
 }
 
 function varged (vargs) {
@@ -20,10 +23,6 @@ function arged (args) {
 
 function sliced () {
     varged(slice.call(arguments))
-
-    return
-
-    try { } catch (e) { }
 }
 
 function arrayed () {
@@ -32,23 +31,21 @@ function arrayed () {
         vargs[i] = arguments[i]
     }
     varged(vargs)
-
-    return
-
-    try { } catch (e) { }
 }
 
 function proxied () {
-    arged(arguments)
+    varged(arguments)
+}
 
-    return
-
-    try { } catch (e) { }
+var concat = [].concat
+function concated () {
+    varged(concat.apply([], arguments))
 }
 
 suite.add({ name: 'slice', fn: function () { sliced(1, 2, 3, 4, 5, 6, 7) } })
 suite.add({ name: 'arrayed', fn: function () { arrayed(1, 2, 3, 4, 5, 6, 7) } })
 suite.add({ name: 'proxied', fn: function () { proxied(1, 2, 3, 4, 5, 6, 7) } })
+suite.add({ name: 'concated', fn: function () { concated(1, 2, 3, 4, 5, 6, 7) } })
 
 suite.on('cycle', function(event) {
     console.log(String(event.target));
