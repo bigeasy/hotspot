@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>hotspot.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+
+    <ul class="sections">
+
+          <li id="title">
+              <div class="annotation">
+                  <h1>hotspot.js</h1>
+              </div>
+          </li>
+
+
+
+        <li id="section-1">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+
+            </div>
+
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">var</span> stack = [], token = [], callbacks = []
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">Cadence</span> (<span class="hljs-params">self, steps, vargs, callback</span>) </span>{
+    <span class="hljs-keyword">this</span>.self = self
+    <span class="hljs-keyword">this</span>.steps = steps
+    <span class="hljs-keyword">this</span>.callback = callback
+    <span class="hljs-keyword">this</span>.index = <span class="hljs-number">0</span>
+    <span class="hljs-keyword">this</span>.vargs = vargs
+    <span class="hljs-keyword">this</span>.called = <span class="hljs-number">0</span>
+    <span class="hljs-keyword">this</span>.finalizers = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Array</span>
+    <span class="hljs-keyword">this</span>.results = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Array</span>
+    <span class="hljs-keyword">this</span>.errors = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Array</span>
+    <span class="hljs-keyword">this</span>.sync = <span class="hljs-literal">true</span>
+    <span class="hljs-keyword">this</span>.waiting = <span class="hljs-literal">false</span>
+    <span class="hljs-keyword">this</span>.cadence = <span class="hljs-keyword">this</span>
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">resolveCallback</span> (<span class="hljs-params">cadence, result, error, vargs</span>) </span>{
+    <span class="hljs-keyword">if</span> (error) {
+        cadence.errors.push(error)
+    } <span class="hljs-keyword">else</span> {
+        result.vargs = vargs
+    }
+    <span class="hljs-keyword">if</span> (++cadence.called === cadence.results.length) {
+        <span class="hljs-keyword">if</span> (cadence.waiting) {
+            invoke(cadence)
+        } <span class="hljs-keyword">else</span> {
+            cadence.sync = <span class="hljs-literal">true</span>
+        }
+    }
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">createCallback</span> (<span class="hljs-params">cadence</span>) </span>{
+    <span class="hljs-keyword">var</span> result = { <span class="hljs-attr">vargs</span>: [] }, callback
+
+    cadence.results.push(result)
+    cadence.sync = <span class="hljs-literal">false</span>
+
+    <span class="hljs-keyword">if</span> (callbacks.length === <span class="hljs-number">0</span>) {
+        callback = {
+            <span class="hljs-attr">cadence</span>: cadence,
+            <span class="hljs-attr">result</span>: result,
+            <span class="hljs-attr">callback</span>: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">error</span>) </span>{
+                <span class="hljs-keyword">var</span> vargs = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Array</span>
+                <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> i = <span class="hljs-number">1</span>, I = <span class="hljs-built_in">arguments</span>.length; i &lt; I; i++) {
+                    vargs[i - <span class="hljs-number">1</span>] = <span class="hljs-built_in">arguments</span>[i]
+                }
+                callbacks.push(callback)
+                resolveCallback(callback.cadence, callback.result, error, vargs)
+            }
+        }
+    } <span class="hljs-keyword">else</span> {
+        callback = callbacks.pop()
+        callback.cadence = cadence
+        callback.result = result
+    }
+
+    <span class="hljs-keyword">return</span> callback.callback
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">async</span> (<span class="hljs-params"></span>) </span>{
+    <span class="hljs-keyword">return</span> createCallback(stack[stack.length - <span class="hljs-number">1</span>])
+}
+
+<span class="hljs-keyword">async</span>.continue = { <span class="hljs-attr">token</span>: token, <span class="hljs-attr">repeat</span>: <span class="hljs-literal">true</span> }
+<span class="hljs-keyword">async</span>.break = { <span class="hljs-attr">token</span>: token, <span class="hljs-attr">repeat</span>: <span class="hljs-literal">false</span> }
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">rescue</span> (<span class="hljs-params">cadence</span>) </span>{
+    <span class="hljs-keyword">var</span> copy = <span class="hljs-keyword">new</span> Cadence(cadence.self, cadence.steps, cadence.vargs, cadence.callback)
+    copy.index = cadence.index
+    copy.waiting = <span class="hljs-literal">true</span>
+    <span class="hljs-keyword">var</span> rescue = <span class="hljs-keyword">new</span> Cadence(cadence.self, [ wrap(
+        <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{ <span class="hljs-keyword">return</span> cadence.catcher.call(<span class="hljs-keyword">this</span>, <span class="hljs-keyword">async</span>, cadence.errors[<span class="hljs-number">0</span>], cadence.errors) }
+    ) ], cadence.vargs, createCallback(copy))
+    rescue.cadence = copy
+    rescue.waiting = <span class="hljs-literal">true</span>
+    invoke(rescue)
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">finalize</span> (<span class="hljs-params">cadence, vargs</span>) </span>{
+    <span class="hljs-keyword">if</span> (cadence.finalizers.length == <span class="hljs-number">0</span>) {
+        (cadence.callback).apply(<span class="hljs-literal">null</span>, vargs)
+    } <span class="hljs-keyword">else</span> {
+        <span class="hljs-keyword">var</span> finalizer = cadence.finalizers.pop()
+        invoke(<span class="hljs-keyword">new</span> Cadence(cadence.self, finalizer.steps, finalizer.vargs, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">error</span>) </span>{
+            <span class="hljs-keyword">if</span> (error) {
+                cadence.errors.push(error)
+                vargs = [ cadence.errors[<span class="hljs-number">0</span>] ]
+            }
+            finalize(cadence, vargs)
+        }))
+    }
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">invoke</span> (<span class="hljs-params">cadence</span>) </span>{
+    <span class="hljs-keyword">var</span> vargs, steps = cadence.steps
+    <span class="hljs-keyword">for</span> (;;) {
+        <span class="hljs-keyword">if</span> (cadence.errors.length) {
+            <span class="hljs-keyword">if</span> (cadence.catcher) {
+                rescue(cadence)
+            } <span class="hljs-keyword">else</span> {
+                finalize(cadence, [ cadence.errors[<span class="hljs-number">0</span>] ])
+            }
+            <span class="hljs-keyword">break</span>
+        }
+
+        <span class="hljs-keyword">if</span> (cadence.results.length == <span class="hljs-number">0</span>) {
+            vargs = cadence.vargs
+            <span class="hljs-keyword">if</span> (vargs[<span class="hljs-number">0</span>] &amp;&amp; vargs[<span class="hljs-number">0</span>].token === token) {
+                cadence.cadence.index = vargs.shift().repeat ? <span class="hljs-number">0</span> : cadence.cadence.steps.length
+            }
+        } <span class="hljs-keyword">else</span> {
+            vargs = []
+            <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> i = <span class="hljs-number">0</span>, I = cadence.results.length; i &lt; I; i++) {
+                <span class="hljs-keyword">var</span> vargs_ = cadence.results[i].vargs
+                <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> j = <span class="hljs-number">0</span>, J = vargs_.length; j &lt; J; j++) {
+                    vargs.push(vargs_[j])
+                }
+            }
+            cadence.vargs = vargs
+        }
+
+        <span class="hljs-keyword">if</span> (cadence.index === steps.length) {
+            <span class="hljs-keyword">if</span> (vargs.length !== <span class="hljs-number">0</span>) {
+                vargs.unshift(<span class="hljs-literal">null</span>)
+            }
+            <span class="hljs-keyword">if</span> (cadence.finalizers.length === <span class="hljs-number">0</span>) {
+                (cadence.callback).apply(<span class="hljs-literal">null</span>, vargs)
+            } <span class="hljs-keyword">else</span> {
+                finalize(cadence, vargs)
+            }
+            <span class="hljs-keyword">break</span>
+        }
+
+        <span class="hljs-keyword">var</span> step = steps[cadence.index++]
+
+        cadence.called = <span class="hljs-number">0</span>
+        cadence.results = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Array</span>
+        cadence.errors = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Array</span>
+        cadence.sync = <span class="hljs-literal">true</span>
+        cadence.waiting = <span class="hljs-literal">false</span>
+
+        vargs.unshift(<span class="hljs-keyword">async</span>)
+
+        stack.push(cadence)
+
+        <span class="hljs-keyword">var</span> ret = step(cadence)
+
+        stack.pop()
+
+        <span class="hljs-keyword">if</span> (ret.length === <span class="hljs-number">2</span>) {
+            cadence.errors.push(ret[<span class="hljs-number">1</span>])
+            cadence.sync = <span class="hljs-literal">true</span>
+        } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (ret[<span class="hljs-number">0</span>] !== <span class="hljs-keyword">void</span>(<span class="hljs-number">0</span>)) {
+            cadence.vargs = <span class="hljs-built_in">Array</span>.isArray(ret[<span class="hljs-number">0</span>]) ? ret[<span class="hljs-number">0</span>] : [ ret[<span class="hljs-number">0</span>] ]
+        }
+
+        <span class="hljs-keyword">if</span> (!cadence.sync) {
+            cadence.waiting = <span class="hljs-literal">true</span>
+            <span class="hljs-keyword">break</span>
+        }
+    }
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">wrap</span> (<span class="hljs-params">step</span>) </span>{
+    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">Array</span>.isArray(step)) {
+        <span class="hljs-keyword">if</span> (step.length === <span class="hljs-number">1</span>) {
+            <span class="hljs-keyword">return</span> <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">cadence</span>) </span>{
+                cadence.finalizers.push({ <span class="hljs-attr">steps</span>: [ wrap(step[<span class="hljs-number">0</span>]) ], <span class="hljs-attr">vargs</span>: cadence.vargs })
+                <span class="hljs-keyword">return</span> []
+            }
+        } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (step.length === <span class="hljs-number">2</span>) {
+            <span class="hljs-keyword">var</span> invocation = wrap(step[<span class="hljs-number">0</span>])
+            <span class="hljs-keyword">return</span> <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">cadence</span>) </span>{
+                cadence.catcher = step[<span class="hljs-number">1</span>]
+                <span class="hljs-keyword">return</span> invocation(cadence)
+            }
+        } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (step.length === <span class="hljs-number">3</span>) {
+            <span class="hljs-keyword">return</span> wrap([
+                step[<span class="hljs-number">0</span>],
+                <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async, error</span>) </span>{
+                    <span class="hljs-keyword">if</span> (step[<span class="hljs-number">1</span>].test(error.code || error.message)) {
+                        <span class="hljs-keyword">return</span> step[<span class="hljs-number">2</span>](<span class="hljs-keyword">async</span>, error)
+                    } <span class="hljs-keyword">else</span> {
+                        <span class="hljs-keyword">throw</span> error
+                    }
+                }
+            ])
+        } <span class="hljs-keyword">else</span> {
+            <span class="hljs-keyword">return</span> <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">cadence</span>) </span>{
+                cadence.vargs.shift()
+                <span class="hljs-keyword">return</span> [ [ cadence.vargs ] ]
+            }
+        }
+    } <span class="hljs-keyword">else</span> {
+        <span class="hljs-keyword">return</span> <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">cadence</span>) </span>{
+            <span class="hljs-keyword">try</span> {
+                <span class="hljs-keyword">return</span> [ step.apply(cadence.self, cadence.vargs) ]
+            } <span class="hljs-keyword">catch</span> (error) {
+                <span class="hljs-keyword">return</span> [ <span class="hljs-literal">null</span>, error ]
+            }
+        }
+    }
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">hotspot</span> (<span class="hljs-params"></span>) </span>{
+    <span class="hljs-keyword">var</span> I = <span class="hljs-built_in">arguments</span>.length
+    <span class="hljs-keyword">var</span> steps = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Array</span>
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> i = <span class="hljs-number">0</span>; i &lt; I; i++) {
+        steps[i] = wrap(<span class="hljs-built_in">arguments</span>[i])
+    }
+    <span class="hljs-keyword">return</span> <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
+        <span class="hljs-keyword">var</span> I = <span class="hljs-built_in">arguments</span>.length
+        <span class="hljs-keyword">var</span> vargs = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Array</span>
+        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> i = <span class="hljs-number">0</span>; i &lt; I - <span class="hljs-number">1</span>; i++) {
+            vargs[i] = <span class="hljs-built_in">arguments</span>[i]
+        }
+        invoke(<span class="hljs-keyword">new</span> Cadence(<span class="hljs-keyword">this</span>, steps, vargs, <span class="hljs-built_in">arguments</span>[i]))
+    }
+}
+
+<span class="hljs-built_in">module</span>.exports = hotspot</pre></div></div>
+
+        </li>
+
+    </ul>
+  </div>
+</body>
+</html>
