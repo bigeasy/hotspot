@@ -1,4 +1,5 @@
 var hotspot = require('..')
+var redux = require('..')
 var cadence = require('cadence')
 var Benchmark = require('benchmark')
 
@@ -19,6 +20,12 @@ Program.prototype.cadence = cadence(function (async) {
     }, function (value) {
         return [ value ]
     })
+})
+
+Program.prototype.redux = redux(function () {
+    inc(1, this.async())
+}, function () {
+    return [ this.vargs[0] ]
 })
 
 var program = new Program
