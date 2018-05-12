@@ -5,16 +5,29 @@ var suite = new Benchmark.Suite
 
 function f () {}
 
+var assert = require('assert')
+
+function thrower () {
+    throw 1
+}
+
+function returner () {
+    return 1
+}
+
 suite.add({
-    name: 'try',
+    name: 'throw',
     fn: function () {
         try {
-            f()
+            thrower()
         } catch (e) {
+            assert(e == 1)
         }
     }
 })
-suite.add({ name: 'direct', fn: function () { f() } })
+suite.add({ name: 'return', fn: function () {
+    assert(returner() == 1)
+} })
 
 suite.on('cycle', function(event) {
     console.log(String(event.target));
